@@ -312,6 +312,44 @@ function AdminPage() {
       </section>
 
       <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Imagem de capa</h2>
+        <div className="space-y-4 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+          <div className="aspect-21/9 w-full overflow-hidden rounded-sm bg-secondary">
+            <img
+              src={config?.hero_image_url || heroFallback}
+              alt="Imagem de capa atual da página inicial"
+              className="size-full object-cover"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="hero_image">Trocar a foto da página inicial</Label>
+            <Input
+              id="hero_image"
+              type="file"
+              accept="image/*"
+              disabled={uploadingHero || !config}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadHeroImage(file);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Recomendado: imagem horizontal, no mínimo 1920px de largura.
+            </p>
+          </div>
+          {config?.hero_image_url ? (
+            <Button
+              variant="quiet"
+              disabled={uploadingHero}
+              onClick={() => void uploadHeroReset()}
+            >
+              Voltar para a imagem original
+            </Button>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Informações do casamento</h2>
         {config ? (
           <form
