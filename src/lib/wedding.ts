@@ -86,13 +86,16 @@ function normalizeButtons(value: unknown): HomeButton[] {
   const parsed = value
     .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
     .map((item) => {
+      const rawTo = item["to"];
       const fallback =
-        DEFAULT_HOME_BUTTONS.find((button) => button.to === item.to) ?? DEFAULT_HOME_BUTTONS[0];
+        DEFAULT_HOME_BUTTONS.find((button) => button.to === rawTo) ?? DEFAULT_HOME_BUTTONS[0]!;
+      const label = item["label"];
+      const hint = item["hint"];
       return {
-        to: (allowed.includes(item.to as HomeButton["to"]) ? item.to : fallback.to) as HomeButton["to"],
-        label: typeof item.label === "string" && item.label ? item.label : fallback.label,
-        hint: typeof item.hint === "string" ? item.hint : fallback.hint,
-        visible: item.visible !== false,
+        to: (allowed.includes(rawTo as HomeButton["to"]) ? rawTo : fallback.to) as HomeButton["to"],
+        label: typeof label === "string" && label ? label : fallback.label,
+        hint: typeof hint === "string" ? hint : fallback.hint,
+        visible: item["visible"] !== false,
       };
     });
   const missing = DEFAULT_HOME_BUTTONS.filter(
@@ -108,19 +111,20 @@ export const settingsQuery = {
     if (error) throw error;
     if (!data) return DEFAULT_SETTINGS;
     const row = data as Record<string, unknown>;
+    const layout = String(row["hero_layout"]);
+    const gallery = row["gallery_images"];
     return {
       ...DEFAULT_SETTINGS,
       ...(data as object),
-      hero_layout: (["full", "split", "minimal"].includes(String(row.hero_layout))
-        ? row.hero_layout
-        : "full") as HeroLayout,
-      gallery_images: Array.isArray(row.gallery_images)
-        ? (row.gallery_images as unknown[]).filter((item): item is string => typeof item === "string")
+      hero_layout: (["full", "split", "minimal"].includes(layout) ? layout : "full") as HeroLayout,
+      gallery_images: Array.isArray(gallery)
+        ? (gallery as unknown[]).filter((item): item is string => typeof item === "string")
         : [],
-      home_buttons: normalizeButtons(row.home_buttons),
+      home_buttons: normalizeButtons(row["home_buttons"]),
     };
   },
 };
+
 
 export const publicGiftsQuery = {
   queryKey: ["gifts", "public"],
