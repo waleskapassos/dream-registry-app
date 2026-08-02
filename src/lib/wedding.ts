@@ -22,6 +22,7 @@ export type SiteSettings = {
   pix_key: string;
   pix_name: string;
   welcome_message: string;
+  hero_image_url: string;
 };
 
 export const settingsQuery = {
@@ -30,7 +31,7 @@ export const settingsQuery = {
     const { data, error } = await supabase
       .from("site_settings")
       .select(
-        "couple_names, wedding_date, ceremony_venue, ceremony_address, maps_url, ceremony_time, pix_key, pix_name, welcome_message",
+        "couple_names, wedding_date, ceremony_venue, ceremony_address, maps_url, ceremony_time, pix_key, pix_name, welcome_message, hero_image_url",
       )
       .maybeSingle();
     if (error) throw error;
@@ -45,6 +46,7 @@ export const settingsQuery = {
         pix_key: "",
         pix_name: "",
         welcome_message: "",
+        hero_image_url: "",
       }
     );
   },

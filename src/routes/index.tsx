@@ -52,7 +52,7 @@ function Index() {
   return (
     <div className="relative min-h-screen">
       <img
-        src={heroImage}
+        src={settings?.hero_image_url || heroImage}
         alt="Arco de flores brancas iluminado pela luz do fim de tarde"
         width={1920}
         height={1280}

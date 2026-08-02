@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 
+import heroFallback from "@/assets/hero-wedding.jpg";
 import { PageShell } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ function AdminPage() {
 
   const [draft, setDraft] = useState(emptyGift);
   const [uploading, setUploading] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const [savingGift, setSavingGift] = useState(false);
   const [config, setConfig] = useState<SiteSettings | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -65,17 +67,25 @@ function AdminPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function uploadToStorage(file: File): Promise<string> {
+    const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
+    const { error } = await supabase.storage.from("gift-images").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (error) throw error;
+    const { data, error: signError } = await supabase.storage
+      .from("gift-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    if (signError || !data?.signedUrl) throw signError ?? new Error("Falha ao gerar o link da foto");
+    return data.signedUrl;
+  }
+
   async function uploadImage(file: File) {
     setUploading(true);
     try {
-      const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
-      const { error } = await supabase.storage.from("gift-images").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) throw error;
-      const { data } = await supabase.storage.from("gift-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
-      setDraft((prev) => ({ ...prev, image_url: data?.signedUrl ?? null }));
+      const url = await uploadToStorage(file);
+      setDraft((prev) => ({ ...prev, image_url: url }));
       toast.success("Foto enviada");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
@@ -83,6 +93,47 @@ function AdminPage() {
       setUploading(false);
     }
   }
+
+  async function uploadHeroImage(file: File) {
+    if (!config) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadToStorage(file);
+      setConfig({ ...config, hero_image_url: url });
+      const { error } = await supabase
+        .from("site_settings")
+        .update({ hero_image_url: url })
+        .eq("id", true);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast.success("Imagem de capa atualizada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao enviar a imagem");
+    } finally {
+      setUploadingHero(false);
+    }
+  }
+
+  async function uploadHeroReset() {
+    if (!config) return;
+    setUploadingHero(true);
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .update({ hero_image_url: "" })
+        .eq("id", true);
+      if (error) throw error;
+      setConfig({ ...config, hero_image_url: "" });
+      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast.success("Imagem original restaurada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao restaurar a imagem");
+    } finally {
+      setUploadingHero(false);
+    }
+  }
+
+
 
   async function saveGift(event: React.FormEvent) {
     event.preventDefault();
@@ -280,6 +331,44 @@ function AdminPage() {
             <li className="text-sm text-muted-foreground">Nenhum presente cadastrado ainda.</li>
           ) : null}
         </ul>
+      </section>
+
+      <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Imagem de capa</h2>
+        <div className="space-y-4 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+          <div className="aspect-21/9 w-full overflow-hidden rounded-sm bg-secondary">
+            <img
+              src={config?.hero_image_url || heroFallback}
+              alt="Imagem de capa atual da página inicial"
+              className="size-full object-cover"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="hero_image">Trocar a foto da página inicial</Label>
+            <Input
+              id="hero_image"
+              type="file"
+              accept="image/*"
+              disabled={uploadingHero || !config}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadHeroImage(file);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Recomendado: imagem horizontal, no mínimo 1920px de largura.
+            </p>
+          </div>
+          {config?.hero_image_url ? (
+            <Button
+              variant="quiet"
+              disabled={uploadingHero}
+              onClick={() => void uploadHeroReset()}
+            >
+              Voltar para a imagem original
+            </Button>
+          ) : null}
+        </div>
       </section>
 
       <section className="mt-12 space-y-4">
