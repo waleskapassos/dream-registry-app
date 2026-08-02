@@ -65,22 +65,50 @@ function AdminPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function uploadToStorage(file: File): Promise<string> {
+    const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
+    const { error } = await supabase.storage.from("gift-images").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (error) throw error;
+    const { data, error: signError } = await supabase.storage
+      .from("gift-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    if (signError || !data?.signedUrl) throw signError ?? new Error("Falha ao gerar o link da foto");
+    return data.signedUrl;
+  }
+
   async function uploadImage(file: File) {
     setUploading(true);
     try {
-      const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
-      const { error } = await supabase.storage.from("gift-images").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) throw error;
-      const { data } = await supabase.storage.from("gift-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
-      setDraft((prev) => ({ ...prev, image_url: data?.signedUrl ?? null }));
+      const url = await uploadToStorage(file);
+      setDraft((prev) => ({ ...prev, image_url: url }));
       toast.success("Foto enviada");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function uploadHeroImage(file: File) {
+    if (!config) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadToStorage(file);
+      setConfig({ ...config, hero_image_url: url });
+      const { error } = await supabase
+        .from("site_settings")
+        .update({ hero_image_url: url })
+        .eq("id", true);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast.success("Imagem de capa atualizada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao enviar a imagem");
+    } finally {
+      setUploadingHero(false);
     }
   }
 
