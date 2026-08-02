@@ -173,11 +173,18 @@ export type Database = {
           ceremony_time: string
           ceremony_venue: string
           couple_names: string
+          gallery_images: Json
+          hero_eyebrow: string
           hero_image_url: string
+          hero_layout: string
+          home_buttons: Json
           id: boolean
           maps_url: string
           pix_key: string
           pix_name: string
+          theme_accent: string
+          theme_background: string
+          theme_primary: string
           updated_at: string
           wedding_date: string
           welcome_message: string
@@ -187,11 +194,18 @@ export type Database = {
           ceremony_time?: string
           ceremony_venue?: string
           couple_names?: string
+          gallery_images?: Json
+          hero_eyebrow?: string
           hero_image_url?: string
+          hero_layout?: string
+          home_buttons?: Json
           id?: boolean
           maps_url?: string
           pix_key?: string
           pix_name?: string
+          theme_accent?: string
+          theme_background?: string
+          theme_primary?: string
           updated_at?: string
           wedding_date?: string
           welcome_message?: string
@@ -201,11 +215,18 @@ export type Database = {
           ceremony_time?: string
           ceremony_venue?: string
           couple_names?: string
+          gallery_images?: Json
+          hero_eyebrow?: string
           hero_image_url?: string
+          hero_layout?: string
+          home_buttons?: Json
           id?: boolean
           maps_url?: string
           pix_key?: string
           pix_name?: string
+          theme_accent?: string
+          theme_background?: string
+          theme_primary?: string
           updated_at?: string
           wedding_date?: string
           welcome_message?: string
