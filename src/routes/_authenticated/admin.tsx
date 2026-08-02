@@ -427,6 +427,196 @@ function AdminPage() {
       </section>
 
       <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Galeria de fotos da página inicial</h2>
+        <div className="space-y-4 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {config?.gallery_images.map((url) => (
+              <div key={url} className="relative">
+                <img src={url} alt="Foto da galeria" className="aspect-square w-full rounded-sm object-cover" />
+                <Button
+                  variant="quiet"
+                  size="icon"
+                  aria-label="Remover foto"
+                  className="absolute right-1 top-1 bg-card/80"
+                  onClick={() =>
+                    void saveConfigValues({
+                      gallery_images: config.gallery_images.filter((item) => item !== url),
+                    })
+                  }
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="gallery_image">Adicionar foto</Label>
+            <Input
+              id="gallery_image"
+              type="file"
+              accept="image/*"
+              disabled={uploadingGallery || !config}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void addGalleryImage(file);
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Cores do site</h2>
+        <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-3">
+          {colorFields.map(([field, label]) => (
+            <div key={field} className="space-y-2">
+              <Label htmlFor={field}>{label}</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={field}
+                  type="color"
+                  className="h-10 w-16 p-1"
+                  value={config?.[field] || "#b9a678"}
+                  onChange={(event) => config && setConfig({ ...config, [field]: event.target.value })}
+                />
+                {config?.[field] ? (
+                  <Button variant="quiet" onClick={() => void saveConfigValues({ [field]: "" })}>
+                    Padrão
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          <div className="sm:col-span-3">
+            <Button
+              variant="elegant"
+              disabled={!config}
+              onClick={() =>
+                config &&
+                void saveConfigValues({
+                  theme_primary: config.theme_primary,
+                  theme_background: config.theme_background,
+                  theme_accent: config.theme_accent,
+                }).then(() => toast.success("Cores atualizadas"))
+              }
+            >
+              Salvar cores
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Layout da página inicial</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {layouts.map(([value, label, hint]) => (
+            <button
+              key={value}
+              type="button"
+              disabled={!config}
+              onClick={() => void saveConfigValues({ hero_layout: value })}
+              className={`rounded-sm border p-4 text-left transition-colors ${
+                config?.hero_layout === value
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-card hover:border-primary/50"
+              }`}
+            >
+              <span className="block font-display text-lg">{label}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Botões da página inicial</h2>
+        <div className="space-y-3">
+          {config?.home_buttons.map((button, index) => (
+            <div key={button.to} className="space-y-3 rounded-sm border border-border bg-card p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`label-${button.to}`}>Título</Label>
+                  <Input
+                    id={`label-${button.to}`}
+                    value={button.label}
+                    onChange={(event) => {
+                      const next = [...config.home_buttons];
+                      next[index] = { ...button, label: event.target.value };
+                      setConfig({ ...config, home_buttons: next });
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`hint-${button.to}`}>Descrição</Label>
+                  <Input
+                    id={`hint-${button.to}`}
+                    value={button.hint}
+                    onChange={(event) => {
+                      const next = [...config.home_buttons];
+                      next[index] = { ...button, hint: event.target.value };
+                      setConfig({ ...config, home_buttons: next });
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="quiet"
+                  disabled={index === 0}
+                  onClick={() => {
+                    const next = [...config.home_buttons];
+                    const previous = next[index - 1]!;
+                    next[index - 1] = button;
+                    next[index] = previous;
+                    setConfig({ ...config, home_buttons: next });
+                  }}
+                >
+                  Subir
+                </Button>
+                <Button
+                  variant="quiet"
+                  disabled={index === config.home_buttons.length - 1}
+                  onClick={() => {
+                    const next = [...config.home_buttons];
+                    const following = next[index + 1]!;
+                    next[index + 1] = button;
+                    next[index] = following;
+                    setConfig({ ...config, home_buttons: next });
+                  }}
+                >
+                  Descer
+                </Button>
+                <Button
+                  variant="quiet"
+                  onClick={() => {
+                    const next = [...config.home_buttons];
+                    next[index] = { ...button, visible: !button.visible };
+                    setConfig({ ...config, home_buttons: next });
+                  }}
+                >
+                  {button.visible ? "Ocultar" : "Mostrar"}
+                </Button>
+              </div>
+            </div>
+          ))}
+          <Button
+            variant="elegant"
+            disabled={!config}
+            onClick={() =>
+              config &&
+              void saveConfigValues({ home_buttons: config.home_buttons }).then(() =>
+                toast.success("Botões atualizados"),
+              )
+            }
+          >
+            Salvar botões
+          </Button>
+        </div>
+      </section>
+
+
+
+      <section className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Informações do casamento</h2>
         {config ? (
           <form
