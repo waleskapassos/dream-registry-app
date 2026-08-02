@@ -173,6 +173,7 @@ export type Database = {
           ceremony_time: string
           ceremony_venue: string
           couple_names: string
+          hero_image_url: string
           id: boolean
           maps_url: string
           pix_key: string
@@ -186,6 +187,7 @@ export type Database = {
           ceremony_time?: string
           ceremony_venue?: string
           couple_names?: string
+          hero_image_url?: string
           id?: boolean
           maps_url?: string
           pix_key?: string
@@ -199,6 +201,7 @@ export type Database = {
           ceremony_time?: string
           ceremony_venue?: string
           couple_names?: string
+          hero_image_url?: string
           id?: boolean
           maps_url?: string
           pix_key?: string
