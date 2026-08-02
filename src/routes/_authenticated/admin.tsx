@@ -114,6 +114,27 @@ function AdminPage() {
     }
   }
 
+  async function uploadHeroReset() {
+    if (!config) return;
+    setUploadingHero(true);
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .update({ hero_image_url: "" })
+        .eq("id", true);
+      if (error) throw error;
+      setConfig({ ...config, hero_image_url: "" });
+      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast.success("Imagem original restaurada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao restaurar a imagem");
+    } finally {
+      setUploadingHero(false);
+    }
+  }
+
+
+
   async function saveGift(event: React.FormEvent) {
     event.preventDefault();
     setSavingGift(true);
