@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "../lib/cart";
 import { Toaster } from "../components/ui/sonner";
+import { ThemeStyle } from "../components/ThemeStyle";
+
 import { supabase } from "../integrations/supabase/client";
 
 function NotFoundComponent() {
