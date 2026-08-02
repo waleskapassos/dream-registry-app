@@ -44,6 +44,7 @@ function AdminPage() {
 
   const [draft, setDraft] = useState(emptyGift);
   const [uploading, setUploading] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const [savingGift, setSavingGift] = useState(false);
   const [config, setConfig] = useState<SiteSettings | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
