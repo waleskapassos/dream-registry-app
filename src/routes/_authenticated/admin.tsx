@@ -1,0 +1,321 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Pencil, Trash2 } from "lucide-react";
+
+import { PageShell } from "@/components/PageShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { formatBRL } from "@/lib/format";
+import { adminGiftsQuery, settingsQuery, type Gift, type SiteSettings } from "@/lib/wedding";
+
+export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({
+    meta: [
+      { title: "Painel dos Noivos — Gerenciar Site" },
+      { name: "description", content: "Gerencie a lista de presentes e as informações do casamento." },
+      { property: "og:title", content: "Painel dos Noivos" },
+      { property: "og:description", content: "Gerencie presentes e informações do casamento." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: AdminPage,
+});
+
+const emptyGift = {
+  id: "",
+  title: "",
+  description: "",
+  price: "",
+  quantity: "1",
+  image_url: "" as string | null,
+  is_active: true,
+};
+
+function AdminPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: gifts } = useQuery(adminGiftsQuery);
+  const { data: settings } = useQuery(settingsQuery);
+
+  const [draft, setDraft] = useState(emptyGift);
+  const [uploading, setUploading] = useState(false);
+  const [savingGift, setSavingGift] = useState(false);
+  const [config, setConfig] = useState<SiteSettings | null>(null);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  useEffect(() => {
+    if (settings && !config) setConfig(settings);
+  }, [settings, config]);
+
+  function editGift(gift: Gift) {
+    setDraft({
+      id: gift.id,
+      title: gift.title,
+      description: gift.description,
+      price: (gift.price_cents / 100).toFixed(2),
+      quantity: String(gift.quantity),
+      image_url: gift.image_url,
+      is_active: gift.is_active,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function uploadImage(file: File) {
+    setUploading(true);
+    try {
+      const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
+      const { error } = await supabase.storage.from("gift-images").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      const { data } = await supabase.storage.from("gift-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      setDraft((prev) => ({ ...prev, image_url: data?.signedUrl ?? null }));
+      toast.success("Foto enviada");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function saveGift(event: React.FormEvent) {
+    event.preventDefault();
+    setSavingGift(true);
+    try {
+      const payload = {
+        title: draft.title.trim(),
+        description: draft.description.trim(),
+        price_cents: Math.round(Number(draft.price.replace(",", ".")) * 100) || 0,
+        quantity: Number(draft.quantity) || 0,
+        image_url: draft.image_url || null,
+        is_active: draft.is_active,
+      };
+      const { error } = draft.id
+        ? await supabase.from("gifts").update(payload).eq("id", draft.id)
+        : await supabase.from("gifts").insert(payload);
+      if (error) throw error;
+      setDraft(emptyGift);
+      await queryClient.invalidateQueries({ queryKey: ["gifts"] });
+      toast.success("Presente salvo");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar");
+    } finally {
+      setSavingGift(false);
+    }
+  }
+
+  async function removeGift(id: string) {
+    const { error } = await supabase.from("gifts").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await queryClient.invalidateQueries({ queryKey: ["gifts"] });
+    toast.success("Presente removido");
+  }
+
+  async function saveConfig(event: React.FormEvent) {
+    event.preventDefault();
+    if (!config) return;
+    setSavingConfig(true);
+    try {
+      const { error } = await supabase.from("site_settings").update(config).eq("id", true);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast.success("Informações atualizadas");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar");
+    } finally {
+      setSavingConfig(false);
+    }
+  }
+
+  const configFields: Array<[keyof SiteSettings, string]> = [
+    ["couple_names", "Nomes dos noivos"],
+    ["wedding_date", "Data do casamento"],
+    ["ceremony_time", "Horário"],
+    ["ceremony_venue", "Nome do local"],
+    ["ceremony_address", "Endereço completo"],
+    ["maps_url", "Link do mapa (opcional)"],
+    ["pix_key", "Chave Pix (conta PJ)"],
+    ["pix_name", "Nome do recebedor Pix"],
+  ];
+
+  return (
+    <PageShell eyebrow="Área restrita" title="Painel dos Noivos">
+      <div className="mb-8 flex justify-end">
+        <Button
+          variant="quiet"
+          onClick={async () => {
+            await queryClient.cancelQueries();
+            queryClient.clear();
+            await supabase.auth.signOut();
+            navigate({ to: "/auth", replace: true });
+          }}
+        >
+          Sair
+        </Button>
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="font-display text-2xl">
+          {draft.id ? "Editar presente" : "Adicionar presente"}
+        </h2>
+        <form
+          onSubmit={saveGift}
+          className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2"
+        >
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="title">Título</Label>
+            <Input
+              id="title"
+              required
+              maxLength={120}
+              value={draft.title}
+              onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              rows={3}
+              maxLength={500}
+              value={draft.description}
+              onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="price">Preço (R$)</Label>
+            <Input
+              id="price"
+              required
+              inputMode="decimal"
+              value={draft.price}
+              onChange={(event) => setDraft({ ...draft, price: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Quantidade disponível (0 = ilimitado)</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min={0}
+              value={draft.quantity}
+              onChange={(event) => setDraft({ ...draft, quantity: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="image">Foto do presente</Label>
+            <Input
+              id="image"
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadImage(file);
+              }}
+            />
+            {draft.image_url ? (
+              <img
+                src={draft.image_url}
+                alt="Pré-visualização do presente"
+                className="mt-2 h-32 w-44 rounded-sm object-cover"
+              />
+            ) : null}
+          </div>
+          <div className="flex gap-3 sm:col-span-2">
+            <Button type="submit" variant="elegant" disabled={savingGift || uploading}>
+              {savingGift ? "Salvando…" : draft.id ? "Salvar alterações" : "Adicionar presente"}
+            </Button>
+            {draft.id ? (
+              <Button type="button" variant="quiet" onClick={() => setDraft(emptyGift)}>
+                Cancelar
+              </Button>
+            ) : null}
+          </div>
+        </form>
+      </section>
+
+      <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Presentes cadastrados</h2>
+        <ul className="space-y-3">
+          {gifts?.map((gift) => (
+            <li
+              key={gift.id}
+              className="flex items-center gap-4 rounded-sm border border-border bg-card p-4"
+            >
+              <div className="size-16 shrink-0 overflow-hidden rounded-sm bg-secondary">
+                {gift.image_url ? (
+                  <img src={gift.image_url} alt={gift.title} className="size-full object-cover" />
+                ) : null}
+              </div>
+              <div className="flex-1">
+                <p className="font-display text-lg">{gift.title}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatBRL(gift.price_cents)} · {gift.is_active ? "visível" : "oculto"}
+                </p>
+              </div>
+              <Button variant="quiet" size="icon" onClick={() => editGift(gift)} aria-label="Editar">
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                variant="quiet"
+                size="icon"
+                onClick={() => void removeGift(gift.id)}
+                aria-label="Remover"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </li>
+          ))}
+          {gifts && gifts.length === 0 ? (
+            <li className="text-sm text-muted-foreground">Nenhum presente cadastrado ainda.</li>
+          ) : null}
+        </ul>
+      </section>
+
+      <section className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Informações do casamento</h2>
+        {config ? (
+          <form
+            onSubmit={saveConfig}
+            className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2"
+          >
+            {configFields.map(([field, label]) => (
+              <div key={field} className="space-y-2">
+                <Label htmlFor={field}>{label}</Label>
+                <Input
+                  id={field}
+                  value={config[field] ?? ""}
+                  onChange={(event) => setConfig({ ...config, [field]: event.target.value })}
+                />
+              </div>
+            ))}
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="welcome_message">Mensagem de boas-vindas</Label>
+              <Textarea
+                id="welcome_message"
+                rows={3}
+                value={config.welcome_message ?? ""}
+                onChange={(event) => setConfig({ ...config, welcome_message: event.target.value })}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Button type="submit" variant="elegant" disabled={savingConfig}>
+                {savingConfig ? "Salvando…" : "Salvar informações"}
+              </Button>
+            </div>
+          </form>
+        ) : null}
+      </section>
+    </PageShell>
+  );
+}
