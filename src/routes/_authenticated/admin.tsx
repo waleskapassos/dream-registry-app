@@ -187,16 +187,69 @@ function AdminPage() {
     }
   }
 
-  const configFields: Array<[keyof SiteSettings, string]> = [
+  type TextField = Extract<
+    keyof SiteSettings,
+    | "couple_names"
+    | "wedding_date"
+    | "ceremony_time"
+    | "ceremony_venue"
+    | "ceremony_address"
+    | "maps_url"
+    | "pix_key"
+    | "pix_name"
+    | "hero_eyebrow"
+  >;
+
+  const configFields: Array<[TextField, string]> = [
     ["couple_names", "Nomes dos noivos"],
     ["wedding_date", "Data do casamento"],
     ["ceremony_time", "Horário"],
     ["ceremony_venue", "Nome do local"],
     ["ceremony_address", "Endereço completo"],
     ["maps_url", "Link do mapa (opcional)"],
+    ["hero_eyebrow", "Frase acima dos nomes"],
     ["pix_key", "Chave Pix (conta PJ)"],
     ["pix_name", "Nome do recebedor Pix"],
   ];
+
+  const colorFields: Array<[Extract<keyof SiteSettings, `theme_${string}`>, string]> = [
+    ["theme_primary", "Cor principal"],
+    ["theme_background", "Cor de fundo"],
+    ["theme_accent", "Cor de destaque"],
+  ];
+
+  const layouts: Array<[SiteSettings["hero_layout"], string, string]> = [
+    ["full", "Foto cheia", "Foto ocupando a tela inteira com os textos por cima"],
+    ["split", "Dividido", "Foto de um lado, textos e botões do outro"],
+    ["minimal", "Minimalista", "Sem foto de fundo, só textos e botões"],
+  ];
+
+  async function saveConfigValues(patch: Partial<SiteSettings>) {
+    if (!config) return;
+    const next = { ...config, ...patch };
+    setConfig(next);
+    const { error } = await supabase.from("site_settings").update(patch).eq("id", true);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+  }
+
+  async function addGalleryImage(file: File) {
+    if (!config) return;
+    setUploadingGallery(true);
+    try {
+      const url = await uploadToStorage(file);
+      await saveConfigValues({ gallery_images: [...config.gallery_images, url] });
+      toast.success("Foto adicionada à galeria");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao enviar a foto");
+    } finally {
+      setUploadingGallery(false);
+    }
+  }
+
 
   return (
     <PageShell eyebrow="Área restrita" title="Painel dos Noivos">
