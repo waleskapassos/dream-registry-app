@@ -32,9 +32,10 @@ export function buildPixPayload(options: {
   txid?: string;
 }): string {
   const merchant = emv("00", "BR.GOV.BCB.PIX") + emv("01", options.key.trim());
-  const amount = options.amountCents && options.amountCents > 0
-    ? emv("54", (options.amountCents / 100).toFixed(2))
-    : "";
+  const amount =
+    options.amountCents && options.amountCents > 0
+      ? emv("54", (options.amountCents / 100).toFixed(2))
+      : "";
 
   const payload =
     emv("00", "01") +

@@ -46,9 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const existing = prev.find((entry) => entry.giftId === item.giftId);
       if (existing) {
         return prev.map((entry) =>
-          entry.giftId === item.giftId
-            ? { ...entry, quantity: entry.quantity + quantity }
-            : entry,
+          entry.giftId === item.giftId ? { ...entry, quantity: entry.quantity + quantity } : entry,
         );
       }
       return [...prev, { ...item, quantity }];

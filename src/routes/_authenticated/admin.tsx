@@ -18,7 +18,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Painel dos Noivos — Gerenciar Site" },
-      { name: "description", content: "Gerencie a lista de presentes e as informações do casamento." },
+      {
+        name: "description",
+        content: "Gerencie a lista de presentes e as informações do casamento.",
+      },
       { property: "og:title", content: "Painel dos Noivos" },
       { property: "og:description", content: "Gerencie presentes e informações do casamento." },
       { name: "robots", content: "noindex" },
@@ -34,14 +37,61 @@ const emptyGift = {
   price: "",
   quantity: "1",
   image_url: "" as string | null,
+  nubank_payment_url: "",
+  nubank_credit_payment_url: "",
+  nubank_debit_payment_url: "",
   is_active: true,
 };
 
+function createUploadPath(file: File): string {
+  const id =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const filename = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "");
+  return `${id}-${filename}`;
+}
+
 function AdminPage() {
+  const [area, setArea] = useState<"layout" | "presentes" | "confirmacoes" | "estatisticas">(
+    "layout",
+  );
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: gifts } = useQuery(adminGiftsQuery);
   const { data: settings } = useQuery(settingsQuery);
+  const { data: rsvps = [] } = useQuery({
+    queryKey: ["rsvps"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rsvps")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: orders = [] } = useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: visits = [] } = useQuery({
+    queryKey: ["site-visits"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_visits").select("id");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const paidOrders = orders.filter((order) => order.status === "paid");
+  const receivedTotalCents = paidOrders.reduce((total, order) => total + order.total_cents, 0);
 
   const [draft, setDraft] = useState(emptyGift);
   const [uploading, setUploading] = useState(false);
@@ -64,13 +114,16 @@ function AdminPage() {
       price: (gift.price_cents / 100).toFixed(2),
       quantity: String(gift.quantity),
       image_url: gift.image_url,
+      nubank_payment_url: gift.nubank_payment_url ?? "",
+      nubank_credit_payment_url: gift.nubank_credit_payment_url ?? "",
+      nubank_debit_payment_url: gift.nubank_debit_payment_url ?? "",
       is_active: gift.is_active,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function uploadToStorage(file: File): Promise<string> {
-    const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")}`;
+    const path = createUploadPath(file);
     const { error } = await supabase.storage.from("gift-images").upload(path, file, {
       cacheControl: "3600",
       upsert: false,
@@ -79,7 +132,8 @@ function AdminPage() {
     const { data, error: signError } = await supabase.storage
       .from("gift-images")
       .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
-    if (signError || !data?.signedUrl) throw signError ?? new Error("Falha ao gerar o link da foto");
+    if (signError || !data?.signedUrl)
+      throw signError ?? new Error("Falha ao gerar o link da foto");
     return data.signedUrl;
   }
 
@@ -135,8 +189,6 @@ function AdminPage() {
     }
   }
 
-
-
   async function saveGift(event: React.FormEvent) {
     event.preventDefault();
     setSavingGift(true);
@@ -147,6 +199,9 @@ function AdminPage() {
         price_cents: Math.round(Number(draft.price.replace(",", ".")) * 100) || 0,
         quantity: Number(draft.quantity) || 0,
         image_url: draft.image_url || null,
+        nubank_payment_url: draft.nubank_payment_url.trim(),
+        nubank_credit_payment_url: draft.nubank_credit_payment_url.trim(),
+        nubank_debit_payment_url: draft.nubank_debit_payment_url.trim(),
         is_active: draft.is_active,
       };
       const { error } = draft.id
@@ -171,6 +226,19 @@ function AdminPage() {
     }
     await queryClient.invalidateQueries({ queryKey: ["gifts"] });
     toast.success("Presente removido");
+  }
+
+  async function setOrderPaid(orderId: string, paid: boolean) {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: paid ? "paid" : "pending" })
+      .eq("id", orderId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await queryClient.invalidateQueries({ queryKey: ["orders"] });
+    toast.success(paid ? "Pagamento confirmado" : "Pagamento marcado como pendente");
   }
 
   async function saveConfig(event: React.FormEvent) {
@@ -218,6 +286,7 @@ function AdminPage() {
     ["theme_primary", "Cor principal"],
     ["theme_background", "Cor de fundo"],
     ["theme_accent", "Cor de destaque"],
+    ["theme_text", "Cor dos textos"],
   ];
 
   const layouts: Array<[SiteSettings["hero_layout"], string, string]> = [
@@ -252,9 +321,62 @@ function AdminPage() {
     }
   }
 
-
   return (
     <PageShell eyebrow="Área restrita" title="Painel dos Noivos">
+      <nav className="mb-8 grid gap-2 sm:grid-cols-4">
+        <button
+          type="button"
+          onClick={() => setArea("layout")}
+          className="rounded-sm border border-border p-3 text-center text-sm hover:border-primary"
+        >
+          Layout
+        </button>
+        <button
+          type="button"
+          onClick={() => setArea("presentes")}
+          className="rounded-sm border border-border p-3 text-center text-sm hover:border-primary"
+        >
+          Presentes
+        </button>
+        <button
+          type="button"
+          onClick={() => setArea("confirmacoes")}
+          className="rounded-sm border border-border p-3 text-center text-sm hover:border-primary"
+        >
+          Confirmações
+        </button>
+        <button
+          type="button"
+          onClick={() => setArea("estatisticas")}
+          className="rounded-sm border border-border p-3 text-center text-sm hover:border-primary"
+        >
+          Estatísticas
+        </button>
+      </nav>
+      <section
+        hidden={area !== "estatisticas"}
+        id="estatisticas"
+        className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <div className="rounded-sm border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Acessos</p>
+          <p className="font-display text-3xl">{visits.length}</p>
+        </div>
+        <div className="rounded-sm border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Confirmações</p>
+          <p className="font-display text-3xl">{rsvps.filter((rsvp) => rsvp.attending).length}</p>
+        </div>
+        <div className="rounded-sm border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Pagamentos confirmados
+          </p>
+          <p className="font-display text-3xl">{paidOrders.length}</p>
+        </div>
+        <div className="rounded-sm border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Total recebido</p>
+          <p className="font-display text-3xl">{formatBRL(receivedTotalCents)}</p>
+        </div>
+      </section>
       <div className="mb-8 flex justify-end">
         <Button
           variant="quiet"
@@ -269,7 +391,7 @@ function AdminPage() {
         </Button>
       </div>
 
-      <section className="space-y-4">
+      <section hidden={area !== "presentes"} id="presentes" className="space-y-4">
         <h2 className="font-display text-2xl">
           {draft.id ? "Editar presente" : "Adicionar presente"}
         </h2>
@@ -318,6 +440,34 @@ function AdminPage() {
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="nubank-credit-payment-url">Link Nubank — cartão de crédito</Label>
+            <Input
+              id="nubank-credit-payment-url"
+              type="url"
+              placeholder="https://..."
+              value={draft.nubank_credit_payment_url}
+              onChange={(event) =>
+                setDraft({ ...draft, nubank_credit_payment_url: event.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="nubank-debit-payment-url">Link Nubank — cartão de débito</Label>
+            <Input
+              id="nubank-debit-payment-url"
+              type="url"
+              placeholder="https://..."
+              value={draft.nubank_debit_payment_url}
+              onChange={(event) =>
+                setDraft({ ...draft, nubank_debit_payment_url: event.target.value })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              Crie no app Nubank links com o mesmo valor deste presente e cole cada um no campo
+              correto.
+            </p>
+          </div>
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="image">Foto do presente</Label>
             <Input
               id="image"
@@ -350,7 +500,118 @@ function AdminPage() {
         </form>
       </section>
 
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} id="layout" className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Tipografia</h2>
+        <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="font_heading">Fonte dos títulos</Label>
+            <select
+              id="font_heading"
+              className="flex h-10 w-full rounded-sm border border-input bg-background px-3 text-sm"
+              value={config?.font_heading ?? "elegant"}
+              onChange={(event) =>
+                config && setConfig({ ...config, font_heading: event.target.value })
+              }
+            >
+              <option value="elegant">Elegante</option>
+              <option value="classic">Clássica</option>
+              <option value="modern">Moderna</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="font_body">Fonte dos textos</Label>
+            <select
+              id="font_body"
+              className="flex h-10 w-full rounded-sm border border-input bg-background px-3 text-sm"
+              value={config?.font_body ?? "modern"}
+              onChange={(event) =>
+                config && setConfig({ ...config, font_body: event.target.value })
+              }
+            >
+              <option value="modern">Moderna</option>
+              <option value="elegant">Elegante</option>
+              <option value="classic">Clássica</option>
+            </select>
+          </div>
+          {(["heading", "body"] as const).map((target) => (
+            <div key={target} className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor={`font_${target}_weight`}>
+                  {target === "heading" ? "Peso dos títulos" : "Peso dos textos"}
+                </Label>
+                <select
+                  id={`font_${target}_weight`}
+                  className="flex h-10 w-full rounded-sm border border-input bg-background px-3 text-sm"
+                  value={
+                    target === "heading"
+                      ? (config?.font_heading_weight ?? 300)
+                      : (config?.font_body_weight ?? 400)
+                  }
+                  onChange={(event) =>
+                    config &&
+                    setConfig({
+                      ...config,
+                      [target === "heading" ? "font_heading_weight" : "font_body_weight"]: Number(
+                        event.target.value,
+                      ),
+                    })
+                  }
+                >
+                  <option value={300}>Fino</option>
+                  <option value={400}>Normal</option>
+                  <option value={700}>Negrito</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`font_${target}_style`}>
+                  {target === "heading" ? "Estilo dos títulos" : "Estilo dos textos"}
+                </Label>
+                <select
+                  id={`font_${target}_style`}
+                  className="flex h-10 w-full rounded-sm border border-input bg-background px-3 text-sm"
+                  value={
+                    target === "heading"
+                      ? (config?.font_heading_style ?? "normal")
+                      : (config?.font_body_style ?? "normal")
+                  }
+                  onChange={(event) =>
+                    config &&
+                    setConfig({
+                      ...config,
+                      [target === "heading" ? "font_heading_style" : "font_body_style"]:
+                        event.target.value,
+                    })
+                  }
+                >
+                  <option value="normal">Normal</option>
+                  <option value="italic">Itálico</option>
+                </select>
+              </div>
+            </div>
+          ))}
+          <div className="sm:col-span-2">
+            <Button
+              variant="elegant"
+              disabled={!config}
+              onClick={() =>
+                config &&
+                void saveConfigValues({
+                  font_heading: config.font_heading,
+                  font_body: config.font_body,
+                  font_heading_weight: config.font_heading_weight,
+                  font_body_weight: config.font_body_weight,
+                  font_heading_style: config.font_heading_style,
+                  font_body_style: config.font_body_style,
+                }).then(() => toast.success("Tipografia atualizada"))
+              }
+            >
+              Salvar tipografia
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section hidden={area !== "presentes"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Presentes cadastrados</h2>
         <ul className="space-y-3">
           {gifts?.map((gift) => (
@@ -369,7 +630,12 @@ function AdminPage() {
                   {formatBRL(gift.price_cents)} · {gift.is_active ? "visível" : "oculto"}
                 </p>
               </div>
-              <Button variant="quiet" size="icon" onClick={() => editGift(gift)} aria-label="Editar">
+              <Button
+                variant="quiet"
+                size="icon"
+                onClick={() => editGift(gift)}
+                aria-label="Editar"
+              >
                 <Pencil className="size-4" />
               </Button>
               <Button
@@ -388,7 +654,7 @@ function AdminPage() {
         </ul>
       </section>
 
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Imagem de capa</h2>
         <div className="space-y-4 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
           <div className="aspect-21/9 w-full overflow-hidden rounded-sm bg-secondary">
@@ -415,24 +681,24 @@ function AdminPage() {
             </p>
           </div>
           {config?.hero_image_url ? (
-            <Button
-              variant="quiet"
-              disabled={uploadingHero}
-              onClick={() => void uploadHeroReset()}
-            >
+            <Button variant="quiet" disabled={uploadingHero} onClick={() => void uploadHeroReset()}>
               Voltar para a imagem original
             </Button>
           ) : null}
         </div>
       </section>
 
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Galeria de fotos da página inicial</h2>
         <div className="space-y-4 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {config?.gallery_images.map((url) => (
               <div key={url} className="relative">
-                <img src={url} alt="Foto da galeria" className="aspect-square w-full rounded-sm object-cover" />
+                <img
+                  src={url}
+                  alt="Foto da galeria"
+                  className="aspect-square w-full rounded-sm object-cover"
+                />
                 <Button
                   variant="quiet"
                   size="icon"
@@ -465,7 +731,7 @@ function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Cores do site</h2>
         <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-3">
           {colorFields.map(([field, label]) => (
@@ -477,7 +743,9 @@ function AdminPage() {
                   type="color"
                   className="h-10 w-16 p-1"
                   value={config?.[field] || "#b9a678"}
-                  onChange={(event) => config && setConfig({ ...config, [field]: event.target.value })}
+                  onChange={(event) =>
+                    config && setConfig({ ...config, [field]: event.target.value })
+                  }
                 />
                 {config?.[field] ? (
                   <Button variant="quiet" onClick={() => void saveConfigValues({ [field]: "" })}>
@@ -487,6 +755,28 @@ function AdminPage() {
               </div>
             </div>
           ))}
+          <div className="space-y-2 sm:col-span-3">
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="hero_overlay_opacity">Transparência da foto principal</Label>
+              <span className="text-sm text-muted-foreground">
+                {config?.hero_overlay_opacity ?? 92}%
+              </span>
+            </div>
+            <Input
+              id="hero_overlay_opacity"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={config?.hero_overlay_opacity ?? 92}
+              onChange={(event) =>
+                config && setConfig({ ...config, hero_overlay_opacity: Number(event.target.value) })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              0% deixa a foto nítida; 100% a cobre com a cor de fundo.
+            </p>
+          </div>
           <div className="sm:col-span-3">
             <Button
               variant="elegant"
@@ -497,6 +787,8 @@ function AdminPage() {
                   theme_primary: config.theme_primary,
                   theme_background: config.theme_background,
                   theme_accent: config.theme_accent,
+                  theme_text: config.theme_text,
+                  hero_overlay_opacity: config.hero_overlay_opacity,
                 }).then(() => toast.success("Cores atualizadas"))
               }
             >
@@ -506,7 +798,7 @@ function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Layout da página inicial</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {layouts.map(([value, label, hint]) => (
@@ -528,7 +820,7 @@ function AdminPage() {
         </div>
       </section>
 
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Botões da página inicial</h2>
         <div className="space-y-3">
           {config?.home_buttons.map((button, index) => (
@@ -614,9 +906,7 @@ function AdminPage() {
         </div>
       </section>
 
-
-
-      <section className="mt-12 space-y-4">
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Informações do casamento</h2>
         {config ? (
           <form
@@ -649,6 +939,59 @@ function AdminPage() {
             </div>
           </form>
         ) : null}
+      </section>
+      <section hidden={area !== "confirmacoes"} id="confirmacoes" className="mt-12 space-y-5">
+        <h2 className="font-display text-2xl">Confirmações e presentes recebidos</h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-sm border border-border bg-card p-5">
+            <h3 className="font-display text-xl">Confirmações de presença</h3>
+            <ul className="mt-4 space-y-3 text-sm">
+              {rsvps.map((rsvp) => (
+                <li key={rsvp.id} className="border-b border-border pb-3">
+                  <strong>{rsvp.name}</strong> ·{" "}
+                  {rsvp.attending ? "vai comparecer" : "não poderá ir"}
+                  <br />
+                  <span className="text-muted-foreground">
+                    {rsvp.guests} acompanhante(s){rsvp.message ? ` — ${rsvp.message}` : ""}
+                  </span>
+                </li>
+              ))}
+              {rsvps.length === 0 ? (
+                <li className="text-muted-foreground">Nenhuma confirmação ainda.</li>
+              ) : null}
+            </ul>
+          </div>
+          <div className="rounded-sm border border-border bg-card p-5">
+            <h3 className="font-display text-xl">Pagamentos dos presentes</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Total confirmado: {formatBRL(receivedTotalCents)}
+            </p>
+            <ul className="mt-4 space-y-3 text-sm">
+              {orders.map((order) => (
+                <li key={order.id} className="border-b border-border pb-3">
+                  <strong>{order.guest_name}</strong> · {formatBRL(order.total_cents)}
+                  <br />
+                  <span className="text-muted-foreground">
+                    {order.payment_method} ·{" "}
+                    {order.status === "paid" ? "pago" : "aguardando pagamento"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant={order.status === "paid" ? "quiet" : "gold"}
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => void setOrderPaid(order.id, order.status !== "paid")}
+                  >
+                    {order.status === "paid" ? "Marcar pendente" : "Confirmar pagamento"}
+                  </Button>
+                </li>
+              ))}
+              {orders.length === 0 ? (
+                <li className="text-muted-foreground">Nenhum presente registrado ainda.</li>
+              ) : null}
+            </ul>
+          </div>
+        </div>
       </section>
     </PageShell>
   );

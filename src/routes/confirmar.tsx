@@ -74,7 +74,11 @@ function RsvpPage() {
 
   if (done) {
     return (
-      <PageShell eyebrow="Recebido" title="Obrigado!" intro="Sua resposta foi registrada com carinho.">
+      <PageShell
+        eyebrow="Recebido"
+        title="Obrigado!"
+        intro="Sua resposta foi registrada com carinho."
+      >
         <div className="mx-auto max-w-md text-center">
           <Button variant="quiet" onClick={() => setDone(false)}>
             Enviar outra confirmação
@@ -179,7 +183,13 @@ function RsvpPage() {
           />
         </div>
 
-        <Button type="submit" variant="elegant" size="lg" className="w-full" disabled={mutation.isPending}>
+        <Button
+          type="submit"
+          variant="elegant"
+          size="lg"
+          className="w-full"
+          disabled={mutation.isPending}
+        >
           {mutation.isPending ? "Enviando…" : "Confirmar presença"}
         </Button>
       </form>

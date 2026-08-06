@@ -64,7 +64,7 @@
   --gradient-veil: linear-gradient(
     180deg,
     color-mix(in oklab, var(--background) 20%, transparent) 0%,
-    color-mix(in oklab, var(--background) 92%, transparent) 100%
+    color-mix(in oklab, var(--background) var(--hero-overlay-opacity, 92%), transparent) 100%
   );
   --shadow-soft: 0 18px 40px -28px color-mix(in oklab, var(--foreground) 45%, transparent);
   --shadow-lift: 0 26px 60px -34px color-mix(in oklab, var(--foreground) 55%, transparent);
@@ -99,6 +99,8 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-style: var(--body-font-style, normal);
+    font-weight: var(--body-font-weight, 400);
   }
 
   h1,
@@ -106,7 +108,8 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    font-weight: 300;
+    font-weight: var(--heading-font-weight, 300);
+    font-style: var(--heading-font-style, normal);
     letter-spacing: 0.01em;
   }
 }

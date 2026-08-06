@@ -5,6 +5,9 @@ export type Gift = {
   title: string;
   description: string;
   image_url: string | null;
+  nubank_payment_url: string;
+  nubank_credit_payment_url: string;
+  nubank_debit_payment_url: string;
   price_cents: number;
   quantity: number;
   purchased_count: number;
@@ -34,9 +37,17 @@ export type SiteSettings = {
   hero_image_url: string;
   hero_eyebrow: string;
   hero_layout: HeroLayout;
+  hero_overlay_opacity: number;
+  font_heading: string;
+  font_body: string;
+  font_heading_weight: number;
+  font_body_weight: number;
+  font_heading_style: string;
+  font_body_style: string;
   theme_primary: string;
   theme_background: string;
   theme_accent: string;
+  theme_text: string;
   gallery_images: string[];
   home_buttons: HomeButton[];
 };
@@ -48,7 +59,12 @@ export const DEFAULT_HOME_BUTTONS: HomeButton[] = [
     hint: "Escolha um presente e pague com Pix ou cartão",
     visible: true,
   },
-  { to: "/local", label: "Local da Cerimônia", hint: "Endereço, horário e como chegar", visible: true },
+  {
+    to: "/local",
+    label: "Local da Cerimônia",
+    hint: "Endereço, horário e como chegar",
+    visible: true,
+  },
   {
     to: "/confirmar",
     label: "Confirmar Presença",
@@ -70,15 +86,23 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   hero_image_url: "",
   hero_eyebrow: "Vamos nos casar",
   hero_layout: "full",
+  hero_overlay_opacity: 92,
+  font_heading: "elegant",
+  font_body: "modern",
+  font_heading_weight: 300,
+  font_body_weight: 400,
+  font_heading_style: "normal",
+  font_body_style: "normal",
   theme_primary: "",
   theme_background: "",
   theme_accent: "",
+  theme_text: "",
   gallery_images: [],
   home_buttons: DEFAULT_HOME_BUTTONS,
 };
 
 const SETTINGS_COLUMNS =
-  "couple_names, wedding_date, ceremony_venue, ceremony_address, maps_url, ceremony_time, pix_key, pix_name, welcome_message, hero_image_url, hero_eyebrow, hero_layout, theme_primary, theme_background, theme_accent, gallery_images, home_buttons";
+  "couple_names, wedding_date, ceremony_venue, ceremony_address, maps_url, ceremony_time, pix_key, pix_name, welcome_message, hero_image_url, hero_eyebrow, hero_layout, hero_overlay_opacity, font_heading, font_body, font_heading_weight, font_body_weight, font_heading_style, font_body_style, theme_primary, theme_background, theme_accent, theme_text, gallery_images, home_buttons";
 
 function normalizeButtons(value: unknown): HomeButton[] {
   if (!Array.isArray(value) || value.length === 0) return DEFAULT_HOME_BUTTONS;
@@ -107,16 +131,24 @@ function normalizeButtons(value: unknown): HomeButton[] {
 export const settingsQuery = {
   queryKey: ["site-settings"],
   queryFn: async (): Promise<SiteSettings> => {
-    const { data, error } = await supabase.from("site_settings").select(SETTINGS_COLUMNS).maybeSingle();
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select(SETTINGS_COLUMNS)
+      .maybeSingle();
     if (error) throw error;
     if (!data) return DEFAULT_SETTINGS;
     const row = data as Record<string, unknown>;
     const layout = String(row["hero_layout"]);
     const gallery = row["gallery_images"];
+    const overlayOpacity = Number(row["hero_overlay_opacity"]);
     return {
       ...DEFAULT_SETTINGS,
       ...(data as object),
       hero_layout: (["full", "split", "minimal"].includes(layout) ? layout : "full") as HeroLayout,
+      hero_overlay_opacity:
+        Number.isFinite(overlayOpacity) && overlayOpacity >= 0 && overlayOpacity <= 100
+          ? overlayOpacity
+          : DEFAULT_SETTINGS.hero_overlay_opacity,
       gallery_images: Array.isArray(gallery)
         ? (gallery as unknown[]).filter((item): item is string => typeof item === "string")
         : [],
@@ -124,7 +156,6 @@ export const settingsQuery = {
     };
   },
 };
-
 
 export const publicGiftsQuery = {
   queryKey: ["gifts", "public"],

@@ -12,6 +12,11 @@ function isLight(hex: string) {
 }
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
+const FONTS = {
+  elegant: '"Cormorant Garamond", Georgia, serif',
+  classic: 'Georgia, "Times New Roman", serif',
+  modern: "Karla, ui-sans-serif, system-ui, sans-serif",
+} as const;
 
 /** Applies the colors saved in the admin panel as CSS variables. */
 export function ThemeStyle() {
@@ -19,6 +24,11 @@ export function ThemeStyle() {
   if (!settings) return null;
 
   const rules: string[] = [];
+  const overlayOpacity = Math.min(100, Math.max(0, settings.hero_overlay_opacity));
+  rules.push(`--hero-overlay-opacity:${overlayOpacity}%;`);
+  rules.push(
+    `--font-display:${FONTS[settings.font_heading as keyof typeof FONTS] ?? FONTS.elegant};--font-sans:${FONTS[settings.font_body as keyof typeof FONTS] ?? FONTS.modern};--heading-font-weight:${settings.font_heading_weight === 700 ? 700 : 300};--body-font-weight:${settings.font_body_weight === 700 ? 700 : 400};--heading-font-style:${settings.font_heading_style === "italic" ? "italic" : "normal"};--body-font-style:${settings.font_body_style === "italic" ? "italic" : "normal"};`,
+  );
 
   if (HEX.test(settings.theme_primary)) {
     const fg = isLight(settings.theme_primary) ? "oklch(0.28 0.014 92)" : "oklch(0.985 0.008 92)";
@@ -34,6 +44,11 @@ export function ThemeStyle() {
   }
   if (HEX.test(settings.theme_accent)) {
     rules.push(`--accent:${settings.theme_accent};--sand:${settings.theme_accent};`);
+  }
+  if (HEX.test(settings.theme_text)) {
+    rules.push(
+      `--foreground:${settings.theme_text};--card-foreground:${settings.theme_text};--popover-foreground:${settings.theme_text};--secondary-foreground:${settings.theme_text};--accent-foreground:${settings.theme_text};--muted-foreground:color-mix(in oklab, ${settings.theme_text} 72%, var(--background));`,
+    );
   }
 
   if (rules.length === 0) return null;

@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Gift, MapPin, HeartHandshake } from "lucide-react";
 
 import heroImage from "@/assets/hero-wedding.jpg";
 import { Ornament } from "@/components/PageShell";
 import { settingsQuery, type HomeButton } from "@/lib/wedding";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,7 +35,7 @@ const icons = {
 
 function Nav({ buttons }: { buttons: HomeButton[] }) {
   return (
-    <nav className="mt-10 grid w-full gap-4">
+    <nav className="mt-10 grid w-full max-w-md gap-4">
       {buttons
         .filter((button) => button.visible)
         .map((button) => {
@@ -80,6 +82,13 @@ function Gallery({ images }: { images: string[] }) {
 function Index() {
   const { data: settings } = useQuery(settingsQuery);
 
+  useEffect(() => {
+    const key = "wedding-visit-recorded";
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    void supabase.from("site_visits").insert({});
+  }, []);
+
   const heroSrc = settings?.hero_image_url || heroImage;
   const eyebrow = settings?.hero_eyebrow || "Vamos nos casar";
   const names = settings?.couple_names || "Nossos Nomes";
@@ -93,15 +102,21 @@ function Index() {
   const intro = (
     <>
       <p className="eyebrow">{eyebrow}</p>
-      <h1 className="mt-4 font-display text-5xl leading-tight sm:text-7xl">{names}</h1>
+      <h1 className="mt-4 font-display text-6xl leading-tight sm:text-8xl">{names}</h1>
       {settings?.wedding_date ? (
-        <p className="mt-4 font-display text-xl tracking-[0.2em] text-primary">
+        <p className="mt-4 font-display text-xl tracking-[0.2em] text-foreground">
           {settings.wedding_date}
         </p>
       ) : null}
       <Ornament />
-      <p className="max-w-md text-sm leading-relaxed text-muted-foreground">{message}</p>
     </>
+  );
+
+  const messageCard = (
+    <aside className="w-full rounded-sm border border-border/70 bg-card/85 p-6 text-left shadow-[var(--shadow-soft)] backdrop-blur-sm sm:p-8">
+      <p className="eyebrow text-primary">Recadinhos dos Noivos</p>
+      <p className="mt-4 text-justify text-sm leading-relaxed text-muted-foreground">{message}</p>
+    </aside>
   );
 
   if (layout === "split") {
@@ -114,6 +129,7 @@ function Index() {
         />
         <div className="mx-auto flex max-w-xl flex-col items-center px-5 py-16 text-center">
           {intro}
+          <div className="mt-8">{messageCard}</div>
           <Nav buttons={buttons} />
           <Gallery images={gallery} />
           <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
@@ -129,6 +145,7 @@ function Index() {
       <div className="min-h-screen bg-background">
         <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-20 text-center">
           {intro}
+          <div className="mt-8">{messageCard}</div>
           <Nav buttons={buttons} />
           <Gallery images={gallery} />
           <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
@@ -156,6 +173,7 @@ function Index() {
 
       <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-20 text-center">
         {intro}
+        <div className="mt-8 w-full max-w-md">{messageCard}</div>
         <Nav buttons={buttons} />
         <Gallery images={gallery} />
         <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">

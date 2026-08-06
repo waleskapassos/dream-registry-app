@@ -33,9 +33,19 @@ export function PageShell({
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
-          <Link to="/" className="eyebrow hover:text-foreground">
-            ← Início
-          </Link>
+          <button
+            type="button"
+            className="eyebrow hover:text-foreground"
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+                return;
+              }
+              window.location.assign("/");
+            }}
+          >
+            ← Voltar
+          </button>
           {showCart ? (
             <Link
               to="/carrinho"

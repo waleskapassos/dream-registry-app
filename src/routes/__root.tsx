@@ -138,5 +138,4 @@ function RootComponent() {
       </CartProvider>
     </QueryClientProvider>
   );
-
 }

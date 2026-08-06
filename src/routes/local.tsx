@@ -30,7 +30,9 @@ function LocationPage() {
   const address = settings?.ceremony_address?.trim() ?? "";
   const mapsUrl =
     settings?.maps_url?.trim() ||
-    (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : "");
+    (address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+      : "");
   const embedUrl = address
     ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
     : "";

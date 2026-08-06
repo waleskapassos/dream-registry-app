@@ -66,6 +66,11 @@ function CartPage() {
         },
       });
 
+      if (order.paymentUrl) {
+        window.location.assign(order.paymentUrl);
+        return;
+      }
+
       let pixCode = "";
       let qr = "";
       if (method === "pix" && settings?.pix_key) {
@@ -80,8 +85,9 @@ function CartPage() {
 
       setResult({ ...order, method, pixCode, qr });
       clear();
-    } catch {
-      toast.error("Não foi possível registrar seu presente. Tente novamente.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Tente novamente.";
+      toast.error(`Não foi possível registrar seu presente: ${detail}`);
     } finally {
       setPending(false);
     }
@@ -125,8 +131,8 @@ function CartPage() {
             </>
           ) : (
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Recebemos seu presente com muito carinho. Os noivos entrarão em contato para concluir o
-              pagamento no cartão.
+              Recebemos seu presente com muito carinho. Os noivos entrarão em contato para concluir
+              o pagamento no cartão.
             </p>
           )}
 
@@ -140,7 +146,11 @@ function CartPage() {
 
   if (items.length === 0) {
     return (
-      <PageShell eyebrow="Carrinho" title="Seu carrinho está vazio" intro="Escolha um presente na nossa lista.">
+      <PageShell
+        eyebrow="Carrinho"
+        title="Seu carrinho está vazio"
+        intro="Escolha um presente na nossa lista."
+      >
         <div className="text-center">
           <Button variant="elegant" asChild>
             <Link to="/presentes">Ver lista de presentes</Link>

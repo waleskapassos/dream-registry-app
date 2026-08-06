@@ -47,7 +47,22 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      await supabase.rpc("claim_admin");
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) throw userError ?? new Error("Usuário não encontrado.");
+
+      const { data: adminRole, error: roleError } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (roleError) throw roleError;
+      if (!adminRole) {
+        throw new Error("Esta conta não tem permissão de administrador.");
+      }
       navigate({ to: "/admin" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível entrar.");
