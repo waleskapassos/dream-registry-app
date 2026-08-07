@@ -14,8 +14,17 @@ function isLight(hex: string) {
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const FONTS = {
   elegant: '"Cormorant Garamond", Georgia, serif',
+  "great-vibes": '"Great Vibes", cursive',
+  "dancing-script": '"Dancing Script", cursive',
+  playfair: '"Playfair Display", Georgia, serif',
+  lora: "Lora, Georgia, serif",
+  "libre-baskerville": '"Libre Baskerville", Georgia, serif',
   classic: 'Georgia, "Times New Roman", serif',
   modern: "Karla, ui-sans-serif, system-ui, sans-serif",
+  montserrat: "Montserrat, ui-sans-serif, system-ui, sans-serif",
+  poppins: "Poppins, ui-sans-serif, system-ui, sans-serif",
+  roboto: "Roboto, ui-sans-serif, system-ui, sans-serif",
+  "open-sans": '"Open Sans", ui-sans-serif, system-ui, sans-serif',
 } as const;
 
 /** Applies the colors saved in the admin panel as CSS variables. */

@@ -24,8 +24,25 @@ export type HomeButton = {
 
 export type HeroLayout = "full" | "split" | "minimal";
 
+export const FONT_OPTIONS = [
+  ["elegant", "Cormorant Garamond — elegante"],
+  ["great-vibes", "Great Vibes — caligrafia"],
+  ["dancing-script", "Dancing Script — manuscrita"],
+  ["playfair", "Playfair Display — sofisticada"],
+  ["lora", "Lora — clássica suave"],
+  ["libre-baskerville", "Libre Baskerville — tradicional"],
+  ["classic", "Georgia — clássica"],
+  ["modern", "Karla — moderna"],
+  ["montserrat", "Montserrat — geométrica"],
+  ["poppins", "Poppins — contemporânea"],
+  ["roboto", "Roboto — neutra"],
+  ["open-sans", "Open Sans — leitura fácil"],
+] as const;
+
+export type FontChoice = (typeof FONT_OPTIONS)[number][0];
+
 export type TextStyle = {
-  font: "elegant" | "classic" | "modern";
+  font: FontChoice;
   color: string;
   size: number;
   bold: boolean;
@@ -36,6 +53,7 @@ export type TypographyStyles = {
   couple_names: TextStyle;
   wedding_date: TextStyle;
   eyebrow: TextStyle;
+  gallery_title: TextStyle;
   heading: TextStyle;
   body: TextStyle;
 };
@@ -44,6 +62,7 @@ export const DEFAULT_TYPOGRAPHY_STYLES: TypographyStyles = {
   couple_names: { font: "elegant", color: "", size: 72, bold: false, italic: false },
   wedding_date: { font: "elegant", color: "", size: 20, bold: false, italic: false },
   eyebrow: { font: "modern", color: "", size: 11, bold: false, italic: false },
+  gallery_title: { font: "elegant", color: "", size: 32, bold: false, italic: false },
   heading: { font: "elegant", color: "", size: 40, bold: false, italic: false },
   body: { font: "modern", color: "", size: 14, bold: false, italic: false },
 };
@@ -144,7 +163,7 @@ function normalizeTypography(value: unknown): TypographyStyles {
       return [
         key,
         {
-          font: (["elegant", "classic", "modern"].includes(font)
+          font: (FONT_OPTIONS.some(([value]) => value === font)
             ? font
             : fallback.font) as TextStyle["font"],
           color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : "",

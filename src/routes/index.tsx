@@ -91,7 +91,7 @@ function Gallery({ images, title }: { images: string[]; title: string }) {
 
   return (
     <section className="mt-14 w-full max-w-2xl" aria-labelledby="gallery-title">
-      <p id="gallery-title" className="type-heading whitespace-pre-line text-center">
+      <p id="gallery-title" className="type-gallery-title whitespace-pre-line text-center">
         {title}
       </p>
       <Ornament />

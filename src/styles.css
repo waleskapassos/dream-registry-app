@@ -151,6 +151,15 @@
     color: var(--type-heading-color, inherit);
   }
 
+  .type-gallery-title {
+    font-family: var(--type-gallery_title-font, var(--font-display));
+    font-size: clamp(1.4rem, var(--type-gallery_title-size, 32px), 3rem);
+    font-weight: var(--type-gallery_title-weight, 400);
+    font-style: var(--type-gallery_title-style, normal);
+    color: var(--type-gallery_title-color, inherit);
+    line-height: 1.35;
+  }
+
   .type-body {
     font-family: var(--type-body-font, var(--font-sans));
     font-size: var(--type-body-size, 14px);

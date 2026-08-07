@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { getYouTubeVideoId } from "@/lib/youtube";
 import {
+  FONT_OPTIONS,
   adminGiftsQuery,
   settingsQuery,
   type Gift,
@@ -114,6 +115,7 @@ function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [editingGalleryTitle, setEditingGalleryTitle] = useState(false);
 
   const [savingGift, setSavingGift] = useState(false);
   const [config, setConfig] = useState<SiteSettings | null>(null);
@@ -334,8 +336,17 @@ function AdminPage() {
     const style = config?.typography_styles[group];
     const fonts = {
       elegant: '"Cormorant Garamond", Georgia, serif',
+      "great-vibes": '"Great Vibes", cursive',
+      "dancing-script": '"Dancing Script", cursive',
+      playfair: '"Playfair Display", Georgia, serif',
+      lora: "Lora, Georgia, serif",
+      "libre-baskerville": '"Libre Baskerville", Georgia, serif',
       classic: 'Georgia, "Times New Roman", serif',
       modern: "Karla, ui-sans-serif, system-ui, sans-serif",
+      montserrat: "Montserrat, ui-sans-serif, system-ui, sans-serif",
+      poppins: "Poppins, ui-sans-serif, system-ui, sans-serif",
+      roboto: "Roboto, ui-sans-serif, system-ui, sans-serif",
+      "open-sans": '"Open Sans", ui-sans-serif, system-ui, sans-serif',
     };
     return style
       ? {
@@ -538,9 +549,11 @@ function AdminPage() {
                 config && setConfig({ ...config, font_heading: event.target.value })
               }
             >
-              <option value="elegant">Elegante</option>
-              <option value="classic">Clássica</option>
-              <option value="modern">Moderna</option>
+              {FONT_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="space-y-2">
@@ -553,9 +566,11 @@ function AdminPage() {
                 config && setConfig({ ...config, font_body: event.target.value })
               }
             >
-              <option value="modern">Moderna</option>
-              <option value="elegant">Elegante</option>
-              <option value="classic">Clássica</option>
+              {FONT_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
           {(["heading", "body"] as const).map((target) => (
@@ -646,9 +661,11 @@ function AdminPage() {
                           })
                         }
                       >
-                        <option value="elegant">Elegante</option>
-                        <option value="classic">Clássica</option>
-                        <option value="modern">Moderna</option>
+                        {FONT_OPTIONS.map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -860,13 +877,95 @@ function AdminPage() {
             </div>
             <Button
               type="button"
+              variant="quiet"
+              onClick={() => setEditingGalleryTitle((current) => !current)}
+            >
+              {editingGalleryTitle ? "Fechar edição da aparência" : "Editar aparência da frase"}
+            </Button>
+            {editingGalleryTitle && config ? (
+              <div className="grid gap-4 rounded-2xl border border-border bg-background/70 p-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="space-y-2">
+                  <Label htmlFor="gallery-title-font">Fonte</Label>
+                  <select
+                    id="gallery-title-font"
+                    className="flex h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                    value={config.typography_styles.gallery_title.font}
+                    onChange={(event) =>
+                      updateTypography("gallery_title", {
+                        font: event.target.value as TypographyStyles["gallery_title"]["font"],
+                      })
+                    }
+                  >
+                    {FONT_OPTIONS.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gallery-title-size">Tamanho (px)</Label>
+                  <Input
+                    id="gallery-title-size"
+                    type="number"
+                    min={18}
+                    max={48}
+                    value={config.typography_styles.gallery_title.size}
+                    onChange={(event) =>
+                      updateTypography("gallery_title", { size: Number(event.target.value) })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gallery-title-color">Cor</Label>
+                  <Input
+                    id="gallery-title-color"
+                    type="color"
+                    className="h-10 w-16 rounded-xl p-1"
+                    value={config.typography_styles.gallery_title.color || "#554f46"}
+                    onChange={(event) =>
+                      updateTypography("gallery_title", { color: event.target.value })
+                    }
+                  />
+                </div>
+                <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={config.typography_styles.gallery_title.bold}
+                    onChange={(event) =>
+                      updateTypography("gallery_title", { bold: event.target.checked })
+                    }
+                  />
+                  <strong>Negrito</strong>
+                </label>
+                <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={config.typography_styles.gallery_title.italic}
+                    onChange={(event) =>
+                      updateTypography("gallery_title", { italic: event.target.checked })
+                    }
+                  />
+                  <em>Itálico</em>
+                </label>
+                <div
+                  className="rounded-xl border border-dashed border-primary/50 p-4 text-center sm:col-span-2 lg:col-span-5"
+                  style={previewStyle("gallery_title")}
+                >
+                  {config.hero_eyebrow || "Prévia da frase da galeria"}
+                </div>
+              </div>
+            ) : null}
+            <Button
+              type="button"
               variant="elegant"
               disabled={!config || !config.hero_eyebrow.trim()}
               onClick={() =>
                 config &&
-                void saveConfigValues({ hero_eyebrow: config.hero_eyebrow.trim() }).then(() =>
-                  toast.success("Frase da galeria atualizada"),
-                )
+                void saveConfigValues({
+                  hero_eyebrow: config.hero_eyebrow.trim(),
+                  typography_styles: config.typography_styles,
+                }).then(() => toast.success("Frase da galeria atualizada"))
               }
             >
               Salvar frase da galeria
