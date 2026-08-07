@@ -291,7 +291,6 @@ function AdminPage() {
     ["ceremony_venue", "Nome do local"],
     ["ceremony_address", "Endereço completo"],
     ["maps_url", "Link do mapa (opcional)"],
-    ["hero_eyebrow", "Frase acima da galeria de fotos"],
     ["pix_key", "Chave Pix (conta PJ)"],
     ["pix_name", "Nome do recebedor Pix"],
   ];
@@ -841,6 +840,38 @@ function AdminPage() {
       <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Galeria de fotos da página inicial</h2>
         <div className="space-y-4 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+          <div className="space-y-3 rounded-2xl border border-primary/35 bg-primary/5 p-4">
+            <div className="space-y-2">
+              <Label htmlFor="gallery_title">Frase acima da galeria de fotos</Label>
+              <Textarea
+                id="gallery_title"
+                rows={4}
+                maxLength={500}
+                placeholder="Digite a frase que aparecerá acima das fotos"
+                value={config?.hero_eyebrow ?? ""}
+                onChange={(event) =>
+                  config && setConfig({ ...config, hero_eyebrow: event.target.value })
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Você pode inserir uma frase completa, versículo ou dedicatória. O texto aceita até
+                500 caracteres.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="elegant"
+              disabled={!config || !config.hero_eyebrow.trim()}
+              onClick={() =>
+                config &&
+                void saveConfigValues({ hero_eyebrow: config.hero_eyebrow.trim() }).then(() =>
+                  toast.success("Frase da galeria atualizada"),
+                )
+              }
+            >
+              Salvar frase da galeria
+            </Button>
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {config?.gallery_images.map((url) => (
               <div key={url} className="relative">
