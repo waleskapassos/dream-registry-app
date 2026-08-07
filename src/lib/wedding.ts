@@ -24,6 +24,30 @@ export type HomeButton = {
 
 export type HeroLayout = "full" | "split" | "minimal";
 
+export type TextStyle = {
+  font: "elegant" | "classic" | "modern";
+  color: string;
+  size: number;
+  bold: boolean;
+  italic: boolean;
+};
+
+export type TypographyStyles = {
+  couple_names: TextStyle;
+  wedding_date: TextStyle;
+  eyebrow: TextStyle;
+  heading: TextStyle;
+  body: TextStyle;
+};
+
+export const DEFAULT_TYPOGRAPHY_STYLES: TypographyStyles = {
+  couple_names: { font: "elegant", color: "", size: 72, bold: false, italic: false },
+  wedding_date: { font: "elegant", color: "", size: 20, bold: false, italic: false },
+  eyebrow: { font: "modern", color: "", size: 11, bold: false, italic: false },
+  heading: { font: "elegant", color: "", size: 40, bold: false, italic: false },
+  body: { font: "modern", color: "", size: 14, bold: false, italic: false },
+};
+
 export type SiteSettings = {
   couple_names: string;
   wedding_date: string;
@@ -50,6 +74,8 @@ export type SiteSettings = {
   theme_text: string;
   gallery_images: string[];
   home_buttons: HomeButton[];
+  typography_styles: TypographyStyles;
+  youtube_music_url: string;
 };
 
 export const DEFAULT_HOME_BUTTONS: HomeButton[] = [
@@ -99,10 +125,37 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   theme_text: "",
   gallery_images: [],
   home_buttons: DEFAULT_HOME_BUTTONS,
+  typography_styles: DEFAULT_TYPOGRAPHY_STYLES,
+  youtube_music_url: "",
 };
 
-const SETTINGS_COLUMNS =
-  "couple_names, wedding_date, ceremony_venue, ceremony_address, maps_url, ceremony_time, pix_key, pix_name, welcome_message, hero_image_url, hero_eyebrow, hero_layout, hero_overlay_opacity, font_heading, font_body, font_heading_weight, font_body_weight, font_heading_style, font_body_style, theme_primary, theme_background, theme_accent, theme_text, gallery_images, home_buttons";
+function normalizeTypography(value: unknown): TypographyStyles {
+  const source =
+    typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  return Object.fromEntries(
+    Object.entries(DEFAULT_TYPOGRAPHY_STYLES).map(([key, fallback]) => {
+      const raw =
+        typeof source[key] === "object" && source[key] !== null
+          ? (source[key] as Record<string, unknown>)
+          : {};
+      const font = String(raw["font"] ?? fallback.font);
+      const size = Number(raw["size"] ?? fallback.size);
+      const color = String(raw["color"] ?? fallback.color);
+      return [
+        key,
+        {
+          font: (["elegant", "classic", "modern"].includes(font)
+            ? font
+            : fallback.font) as TextStyle["font"],
+          color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : "",
+          size: Number.isFinite(size) ? Math.min(120, Math.max(9, size)) : fallback.size,
+          bold: raw["bold"] === true,
+          italic: raw["italic"] === true,
+        },
+      ];
+    }),
+  ) as TypographyStyles;
+}
 
 function normalizeButtons(value: unknown): HomeButton[] {
   if (!Array.isArray(value) || value.length === 0) return DEFAULT_HOME_BUTTONS;
@@ -131,10 +184,7 @@ function normalizeButtons(value: unknown): HomeButton[] {
 export const settingsQuery = {
   queryKey: ["site-settings"],
   queryFn: async (): Promise<SiteSettings> => {
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select(SETTINGS_COLUMNS)
-      .maybeSingle();
+    const { data, error } = await supabase.from("site_settings").select("*").maybeSingle();
     if (error) throw error;
     if (!data) return DEFAULT_SETTINGS;
     const row = data as Record<string, unknown>;
@@ -153,6 +203,7 @@ export const settingsQuery = {
         ? (gallery as unknown[]).filter((item): item is string => typeof item === "string")
         : [],
       home_buttons: normalizeButtons(row["home_buttons"]),
+      typography_styles: normalizeTypography(row["typography_styles"]),
     };
   },
 };

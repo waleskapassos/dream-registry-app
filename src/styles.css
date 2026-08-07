@@ -69,6 +69,7 @@
   --shadow-soft: 0 18px 40px -28px color-mix(in oklab, var(--foreground) 45%, transparent);
   --shadow-lift: 0 26px 60px -34px color-mix(in oklab, var(--foreground) 55%, transparent);
   --shadow-home-action: 0 14px 28px -12px color-mix(in oklab, var(--primary) 72%, transparent);
+  --shadow-button: 0 8px 18px -9px color-mix(in oklab, var(--foreground) 45%, transparent);
 }
 
 .dark {
@@ -98,10 +99,11 @@
 
   body {
     background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-    font-style: var(--body-font-style, normal);
-    font-weight: var(--body-font-weight, 400);
+    color: var(--type-body-color, var(--color-foreground));
+    font-family: var(--type-body-font, var(--font-sans));
+    font-size: var(--type-body-size, 14px);
+    font-style: var(--type-body-style, var(--body-font-style, normal));
+    font-weight: var(--type-body-weight, var(--body-font-weight, 400));
   }
 
   h1,
@@ -115,12 +117,57 @@
   }
 }
 
+@layer components {
+  .type-couple-names {
+    font-family: var(--type-couple_names-font, var(--font-display));
+    font-size: clamp(2.75rem, var(--type-couple_names-size, 72px), 7.5rem);
+    font-weight: var(--type-couple_names-weight, 400);
+    font-style: var(--type-couple_names-style, normal);
+    color: var(--type-couple_names-color, inherit);
+  }
+
+  .type-wedding-date {
+    font-family: var(--type-wedding_date-font, var(--font-display));
+    font-size: var(--type-wedding_date-size, 20px);
+    font-weight: var(--type-wedding_date-weight, 400);
+    font-style: var(--type-wedding_date-style, normal);
+    color: var(--type-wedding_date-color, inherit);
+  }
+
+  .type-eyebrow,
+  .eyebrow {
+    font-family: var(--type-eyebrow-font, var(--font-sans));
+    font-size: var(--type-eyebrow-size, 11px);
+    font-weight: var(--type-eyebrow-weight, 400);
+    font-style: var(--type-eyebrow-style, normal);
+    color: var(--type-eyebrow-color, var(--color-muted-foreground));
+  }
+
+  .type-heading {
+    font-family: var(--type-heading-font, var(--font-display));
+    font-size: var(--type-heading-size, 40px);
+    font-weight: var(--type-heading-weight, 400);
+    font-style: var(--type-heading-style, normal);
+    color: var(--type-heading-color, inherit);
+  }
+
+  .type-body {
+    font-family: var(--type-body-font, var(--font-sans));
+    font-size: var(--type-body-size, 14px);
+    font-weight: var(--type-body-weight, 400);
+    font-style: var(--type-body-style, normal);
+    color: var(--type-body-color, inherit);
+  }
+}
+
 @utility eyebrow {
-  font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-family: var(--type-eyebrow-font, var(--font-sans));
+  font-size: var(--type-eyebrow-size, 0.7rem);
+  font-weight: var(--type-eyebrow-weight, 400);
+  font-style: var(--type-eyebrow-style, normal);
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--color-muted-foreground);
+  color: var(--type-eyebrow-color, var(--color-muted-foreground));
 }
 
 @utility rule-ornament {
@@ -141,6 +188,28 @@
   50% {
     opacity: 1;
     box-shadow: 0 0 18px 2px color-mix(in oklab, var(--gold) 55%, transparent);
+  }
+}
+
+@keyframes gallery-photo-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.gallery-photo-enter {
+  animation: gallery-photo-enter 600ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-photo-enter {
+    animation: none;
   }
 }
 

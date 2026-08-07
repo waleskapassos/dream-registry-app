@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 
@@ -12,7 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
-import { adminGiftsQuery, settingsQuery, type Gift, type SiteSettings } from "@/lib/wedding";
+import { getYouTubeVideoId } from "@/lib/youtube";
+import {
+  adminGiftsQuery,
+  settingsQuery,
+  type Gift,
+  type SiteSettings,
+  type TypographyStyles,
+} from "@/lib/wedding";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -50,6 +57,19 @@ function createUploadPath(file: File): string {
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const filename = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "");
   return `${id}-${filename}`;
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (hex: string) => {
+    const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255);
+    const [r = 0, g = 0, b = 0] = channels.map((value) =>
+      value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
+    );
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  if (!/^#[0-9a-f]{6}$/i.test(foreground) || !/^#[0-9a-f]{6}$/i.test(background)) return null;
+  const [lighter, darker] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return ((lighter ?? 0) + 0.05) / ((darker ?? 0) + 0.05);
 }
 
 function AdminPage() {
@@ -101,6 +121,9 @@ function AdminPage() {
   const [savingGift, setSavingGift] = useState(false);
   const [config, setConfig] = useState<SiteSettings | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
+  const textContrast = config
+    ? contrastRatio(config.theme_text || "#554f46", config.theme_background || "#faf7f0")
+    : null;
 
   useEffect(() => {
     if (settings && !config) setConfig(settings);
@@ -277,7 +300,7 @@ function AdminPage() {
     ["ceremony_venue", "Nome do local"],
     ["ceremony_address", "Endereço completo"],
     ["maps_url", "Link do mapa (opcional)"],
-    ["hero_eyebrow", "Frase acima dos nomes"],
+    ["hero_eyebrow", "Frase acima da galeria de fotos"],
     ["pix_key", "Chave Pix (conta PJ)"],
     ["pix_name", "Nome do recebedor Pix"],
   ];
@@ -294,6 +317,46 @@ function AdminPage() {
     ["split", "Dividido", "Foto de um lado, textos e botões do outro"],
     ["minimal", "Minimalista", "Sem foto de fundo, só textos e botões"],
   ];
+
+  const typographyGroups: Array<[keyof TypographyStyles, string, string]> = [
+    ["couple_names", "Nomes dos noivos", "Nome principal exibido na página inicial"],
+    ["wedding_date", "Data do casamento", "Data mostrada abaixo dos nomes"],
+    ["eyebrow", "Frases de destaque", "Textos pequenos em letras espaçadas"],
+    ["heading", "Títulos das páginas", "Lista de Presentes, Local, Carrinho e demais títulos"],
+    ["body", "Textos e recados", "Frases, descrições e recadinho dos noivos"],
+  ];
+
+  function updateTypography(
+    group: keyof TypographyStyles,
+    patch: Partial<TypographyStyles[keyof TypographyStyles]>,
+  ) {
+    if (!config) return;
+    setConfig({
+      ...config,
+      typography_styles: {
+        ...config.typography_styles,
+        [group]: { ...config.typography_styles[group], ...patch },
+      },
+    });
+  }
+
+  function previewStyle(group: keyof TypographyStyles): CSSProperties {
+    const style = config?.typography_styles[group];
+    const fonts = {
+      elegant: '"Cormorant Garamond", Georgia, serif',
+      classic: 'Georgia, "Times New Roman", serif',
+      modern: "Karla, ui-sans-serif, system-ui, sans-serif",
+    };
+    return style
+      ? {
+          fontFamily: fonts[style.font],
+          color: style.color || config?.theme_text || undefined,
+          fontSize: style.size,
+          fontWeight: style.bold ? 700 : 400,
+          fontStyle: style.italic ? "italic" : "normal",
+        }
+      : {};
+  }
 
   async function saveConfigValues(patch: Partial<SiteSettings>) {
     if (!config) return;
@@ -589,6 +652,129 @@ function AdminPage() {
               </div>
             </div>
           ))}
+          <div className="space-y-4 border-t border-border pt-6 sm:col-span-2">
+            <div>
+              <h3 className="font-display text-xl">Estilo de cada parte do site</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Personalize fonte, cor, tamanho, negrito e itálico separadamente.
+              </p>
+            </div>
+            <div className="grid gap-4">
+              {typographyGroups.map(([group, label, hint]) => {
+                const style = config?.typography_styles[group];
+                if (!style) return null;
+                return (
+                  <fieldset
+                    key={group}
+                    className="grid gap-4 rounded-2xl border border-border bg-background/60 p-4 sm:grid-cols-2 lg:grid-cols-5"
+                  >
+                    <legend className="px-2 font-display text-lg">{label}</legend>
+                    <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-5">
+                      {hint}
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor={`${group}-font`}>Fonte</Label>
+                      <select
+                        id={`${group}-font`}
+                        className="flex h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                        value={style.font}
+                        onChange={(event) =>
+                          updateTypography(group, {
+                            font: event.target.value as typeof style.font,
+                          })
+                        }
+                      >
+                        <option value="elegant">Elegante</option>
+                        <option value="classic">Clássica</option>
+                        <option value="modern">Moderna</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`${group}-color`}>Cor</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`${group}-color`}
+                          type="color"
+                          className="h-10 w-16 rounded-xl p-1"
+                          value={style.color || "#554f46"}
+                          onChange={(event) =>
+                            updateTypography(group, { color: event.target.value })
+                          }
+                        />
+                        {style.color ? (
+                          <Button
+                            type="button"
+                            variant="quiet"
+                            size="sm"
+                            onClick={() => updateTypography(group, { color: "" })}
+                          >
+                            Padrão
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`${group}-size`}>Tamanho (px)</Label>
+                      <Input
+                        id={`${group}-size`}
+                        type="number"
+                        min={9}
+                        max={120}
+                        value={style.size}
+                        onChange={(event) =>
+                          updateTypography(group, { size: Number(event.target.value) })
+                        }
+                      />
+                    </div>
+                    <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={style.bold}
+                        onChange={(event) =>
+                          updateTypography(group, { bold: event.target.checked })
+                        }
+                      />
+                      <strong>Negrito</strong>
+                    </label>
+                    <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={style.italic}
+                        onChange={(event) =>
+                          updateTypography(group, { italic: event.target.checked })
+                        }
+                      />
+                      <em>Itálico</em>
+                    </label>
+                  </fieldset>
+                );
+              })}
+            </div>
+          </div>
+          {config ? (
+            <div
+              className="space-y-4 rounded-2xl border-2 border-dashed border-primary/50 p-6 text-center sm:col-span-2"
+              style={{
+                background: config.theme_background || undefined,
+                color: config.theme_text || undefined,
+              }}
+            >
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                Pré-visualização
+              </p>
+              <h3 style={previewStyle("couple_names")}>
+                {config.couple_names || "Nomes dos Noivos"}
+              </h3>
+              <p style={previewStyle("wedding_date")}>
+                {config.wedding_date || "Data do casamento"}
+              </p>
+              <p style={previewStyle("eyebrow")}>{config.hero_eyebrow || "Frase da galeria"}</p>
+              <p style={previewStyle("heading")}>Título de uma página</p>
+              <p style={previewStyle("body")}>
+                Este é um exemplo de como os textos e recados aparecerão no site.
+              </p>
+            </div>
+          ) : null}
           <div className="sm:col-span-2">
             <Button
               variant="elegant"
@@ -602,6 +788,7 @@ function AdminPage() {
                   font_body_weight: config.font_body_weight,
                   font_heading_style: config.font_heading_style,
                   font_body_style: config.font_body_style,
+                  typography_styles: config.typography_styles,
                 }).then(() => toast.success("Tipografia atualizada"))
               }
             >
@@ -732,6 +919,60 @@ function AdminPage() {
       </section>
 
       <section hidden={area !== "layout"} className="mt-12 space-y-4">
+        <h2 className="font-display text-2xl">Música do site</h2>
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+          <div className="space-y-2">
+            <Label htmlFor="youtube_music_url">Link da música no YouTube</Label>
+            <Input
+              id="youtube_music_url"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={config?.youtube_music_url ?? ""}
+              onChange={(event) =>
+                config && setConfig({ ...config, youtube_music_url: event.target.value })
+              }
+            />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Aceita links do YouTube, youtu.be, Shorts ou embed. Por regra dos navegadores, o
+              visitante toca em “Ouvir nossa música” para iniciar o som.
+            </p>
+            {config?.youtube_music_url && !getYouTubeVideoId(config.youtube_music_url) ? (
+              <p className="text-sm font-medium text-destructive" role="alert">
+                Este link do YouTube não é válido ou não contém um vídeo reconhecido.
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="elegant"
+              disabled={
+                !config ||
+                (!!config.youtube_music_url && !getYouTubeVideoId(config.youtube_music_url))
+              }
+              onClick={() =>
+                config &&
+                void saveConfigValues({ youtube_music_url: config.youtube_music_url.trim() }).then(
+                  () => toast.success("Música atualizada"),
+                )
+              }
+            >
+              Salvar música
+            </Button>
+            {config?.youtube_music_url ? (
+              <Button
+                type="button"
+                variant="quiet"
+                onClick={() => void saveConfigValues({ youtube_music_url: "" })}
+              >
+                Remover música
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Cores do site</h2>
         <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-3">
           {colorFields.map(([field, label]) => (
@@ -755,6 +996,12 @@ function AdminPage() {
               </div>
             </div>
           ))}
+          {textContrast !== null && textContrast < 4.5 ? (
+            <div className="rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm sm:col-span-3">
+              <strong>Contraste baixo:</strong> a cor do texto pode ficar difícil de ler sobre o
+              fundo. Escolha cores mais diferentes antes de salvar.
+            </div>
+          ) : null}
           <div className="space-y-2 sm:col-span-3">
             <div className="flex items-center justify-between gap-4">
               <Label htmlFor="hero_overlay_opacity">Transparência da foto principal</Label>
@@ -954,6 +1201,16 @@ function AdminPage() {
                   <span className="text-muted-foreground">
                     {rsvp.guests} acompanhante(s){rsvp.message ? ` — ${rsvp.message}` : ""}
                   </span>
+                  {rsvp.companion_names ? (
+                    <p className="mt-1 text-muted-foreground">
+                      Acompanhantes: {rsvp.companion_names}
+                    </p>
+                  ) : null}
+                  {rsvp.dietary_restrictions ? (
+                    <p className="mt-1 text-muted-foreground">
+                      Restrições alimentares: {rsvp.dietary_restrictions}
+                    </p>
+                  ) : null}
                 </li>
               ))}
               {rsvps.length === 0 ? (

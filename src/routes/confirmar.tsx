@@ -33,6 +33,8 @@ const rsvpSchema = z.object({
   guests_count: z.number().int().min(1).max(10),
   attending: z.boolean(),
   message: z.string().trim().max(500).or(z.literal("")),
+  companion_names: z.string().trim().max(500).or(z.literal("")),
+  dietary_restrictions: z.string().trim().max(500).or(z.literal("")),
 });
 
 function RsvpPage() {
@@ -43,6 +45,8 @@ function RsvpPage() {
     guests_count: 1,
     attending: true,
     message: "",
+    companion_names: "",
+    dietary_restrictions: "",
   });
   const [done, setDone] = useState(false);
 
@@ -56,6 +60,8 @@ function RsvpPage() {
         guests: parsed.guests_count,
         attending: parsed.attending,
         message: parsed.message || null,
+        companion_names: parsed.companion_names || null,
+        dietary_restrictions: parsed.dietary_restrictions || null,
       });
       if (error) throw error;
     },
@@ -157,18 +163,44 @@ function RsvpPage() {
         </fieldset>
 
         {form.attending ? (
-          <div className="space-y-2">
-            <Label htmlFor="guests_count">Quantas pessoas (incluindo você)</Label>
-            <Input
-              id="guests_count"
-              type="number"
-              min={1}
-              max={10}
-              value={form.guests_count}
-              onChange={(event) =>
-                setForm({ ...form, guests_count: Number(event.target.value) || 1 })
-              }
-            />
+          <div className="space-y-5 rounded-2xl border border-border bg-background/50 p-4">
+            <div className="space-y-2">
+              <Label htmlFor="guests_count">Quantas pessoas (incluindo você)</Label>
+              <Input
+                id="guests_count"
+                type="number"
+                min={1}
+                max={10}
+                value={form.guests_count}
+                onChange={(event) =>
+                  setForm({ ...form, guests_count: Number(event.target.value) || 1 })
+                }
+              />
+            </div>
+            {form.guests_count > 1 ? (
+              <div className="space-y-2">
+                <Label htmlFor="companion_names">Nome dos acompanhantes</Label>
+                <Textarea
+                  id="companion_names"
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Informe um nome por linha"
+                  value={form.companion_names}
+                  onChange={(event) => setForm({ ...form, companion_names: event.target.value })}
+                />
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="dietary_restrictions">Restrições alimentares (opcional)</Label>
+              <Textarea
+                id="dietary_restrictions"
+                rows={2}
+                maxLength={500}
+                placeholder="Alergias, intolerâncias ou alimentação especial"
+                value={form.dietary_restrictions}
+                onChange={(event) => setForm({ ...form, dietary_restrictions: event.target.value })}
+              />
+            </div>
           </div>
         ) : null}
 

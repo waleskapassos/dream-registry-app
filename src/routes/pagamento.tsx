@@ -3,6 +3,7 @@ import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { z } from "zod";
 
 import { PageShell } from "@/components/PageShell";
+import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({
@@ -45,6 +46,7 @@ function PaymentResultPage() {
 
   return (
     <PageShell eyebrow={state.eyebrow} title={state.title} intro={state.message}>
+      <CheckoutProgress current={status === "approved" ? 4 : 3} />
       <div className="mx-auto flex max-w-md flex-col items-center gap-6 rounded-2xl border border-border bg-card p-8 text-center shadow-[var(--shadow-soft)]">
         <state.Icon className={`size-14 ${state.color}`} aria-hidden="true" />
         <Button variant="elegant" className="w-full" asChild>

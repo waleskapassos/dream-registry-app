@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Copy, Minus, Plus, Trash2 } from "lucide-react";
 
 import { PageShell } from "@/components/PageShell";
+import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,6 +164,7 @@ function CartPage() {
 
   return (
     <PageShell eyebrow="Carrinho" title="Finalizar Presente">
+      <CheckoutProgress current={2} />
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         <ul className="space-y-4">
           {items.map((item) => (

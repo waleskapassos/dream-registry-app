@@ -147,6 +147,8 @@ export type Database = {
           message: string | null;
           name: string;
           phone: string | null;
+          companion_names: string | null;
+          dietary_restrictions: string | null;
         };
         Insert: {
           attending?: boolean;
@@ -157,6 +159,8 @@ export type Database = {
           message?: string | null;
           name: string;
           phone?: string | null;
+          companion_names?: string | null;
+          dietary_restrictions?: string | null;
         };
         Update: {
           attending?: boolean;
@@ -167,6 +171,8 @@ export type Database = {
           message?: string | null;
           name?: string;
           phone?: string | null;
+          companion_names?: string | null;
+          dietary_restrictions?: string | null;
         };
         Relationships: [];
       };
@@ -196,6 +202,8 @@ export type Database = {
           theme_background: string;
           theme_primary: string;
           theme_text: string;
+          typography_styles: Json;
+          youtube_music_url: string;
           updated_at: string;
           wedding_date: string;
           welcome_message: string;
@@ -225,6 +233,8 @@ export type Database = {
           theme_background?: string;
           theme_primary?: string;
           theme_text?: string;
+          typography_styles?: Json;
+          youtube_music_url?: string;
           updated_at?: string;
           wedding_date?: string;
           welcome_message?: string;
@@ -254,6 +264,8 @@ export type Database = {
           theme_background?: string;
           theme_primary?: string;
           theme_text?: string;
+          typography_styles?: Json;
+          youtube_music_url?: string;
           updated_at?: string;
           wedding_date?: string;
           welcome_message?: string;

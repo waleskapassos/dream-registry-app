@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingBag } from "lucide-react";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useCart } from "@/lib/cart";
@@ -35,7 +35,7 @@ export function PageShell({
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
           <button
             type="button"
-            className="eyebrow hover:text-foreground"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-primary/75 bg-card px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-foreground shadow-[var(--shadow-button)] transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
               if (window.history.length > 1) {
                 window.history.back();
@@ -44,17 +44,18 @@ export function PageShell({
               window.location.assign("/");
             }}
           >
-            ← Voltar
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Voltar
           </button>
           {showCart ? (
             <Link
               to="/carrinho"
-              className="relative inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+              className="relative inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-primary bg-primary px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-primary-foreground shadow-[var(--shadow-button)] transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ShoppingBag className="size-4" />
               Carrinho
               {count > 0 ? (
-                <span className="absolute -right-4 -top-2 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                <span className="absolute -right-1 -top-2 flex size-6 items-center justify-center rounded-full border-2 border-background bg-foreground text-[10px] text-background shadow-sm">
                   {count}
                 </span>
               ) : null}
@@ -66,9 +67,9 @@ export function PageShell({
       <main className="mx-auto max-w-5xl px-5 pb-24 pt-12">
         <div className="text-center">
           {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-          <h1 className="mt-3 font-display text-4xl sm:text-5xl">{title}</h1>
+          <h1 className="type-heading mt-3">{title}</h1>
           {intro ? (
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            <p className="type-body mx-auto mt-4 max-w-xl leading-relaxed text-muted-foreground">
               {intro}
             </p>
           ) : null}

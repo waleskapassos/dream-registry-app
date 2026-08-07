@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { Gift, MapPin, HeartHandshake, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Gift, MapPin, HeartHandshake, ChevronLeft, ChevronRight } from "lucide-react";
 
 import heroImage from "@/assets/hero-wedding.jpg";
 import { Ornament } from "@/components/PageShell";
@@ -68,31 +68,109 @@ function Nav({ buttons }: { buttons: HomeButton[] }) {
   );
 }
 
-function Gallery({ images }: { images: string[] }) {
+function Gallery({ images, title }: { images: string[]; title: string }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(
+      () => setActiveIndex((current) => (current + 1) % images.length),
+      4500,
+    );
+    return () => window.clearInterval(timer);
+  }, [images.length]);
+
+  useEffect(() => {
+    if (activeIndex >= images.length) setActiveIndex(0);
+  }, [activeIndex, images.length]);
+
   if (images.length === 0) return null;
+  const showPrevious = () =>
+    setActiveIndex((current) => (current - 1 + images.length) % images.length);
+  const showNext = () => setActiveIndex((current) => (current + 1) % images.length);
+
   return (
-    <div className="mt-12 grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
-      {images.map((url) => (
+    <section className="mt-14 w-full max-w-2xl" aria-labelledby="gallery-title">
+      <p id="gallery-title" className="type-heading text-center">
+        {title}
+      </p>
+      <Ornament />
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/65 p-2 shadow-[var(--shadow-soft)] backdrop-blur-sm sm:p-3">
         <img
-          key={url}
-          src={url}
-          alt="Foto do casal"
-          loading="lazy"
-          className="aspect-square w-full rounded-sm object-cover shadow-[var(--shadow-soft)]"
+          key={`${images[activeIndex]}-${activeIndex}`}
+          src={images[activeIndex]}
+          alt={`Foto ${activeIndex + 1} de ${images.length} da galeria do casal`}
+          className="gallery-photo-enter aspect-4/3 w-full rounded-xl object-contain"
         />
-      ))}
-    </div>
+        {images.length > 1 ? (
+          <>
+            <button
+              type="button"
+              onClick={showPrevious}
+              aria-label="Foto anterior"
+              className="absolute left-4 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-primary/40 bg-card/90 text-foreground shadow-[var(--shadow-button)] backdrop-blur transition-all hover:scale-105 hover:border-primary"
+            >
+              <ChevronLeft className="size-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={showNext}
+              aria-label="Próxima foto"
+              className="absolute right-4 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border-2 border-primary/40 bg-card/90 text-foreground shadow-[var(--shadow-button)] backdrop-blur transition-all hover:scale-105 hover:border-primary"
+            >
+              <ChevronRight className="size-5" aria-hidden="true" />
+            </button>
+          </>
+        ) : null}
+      </div>
+      {images.length > 1 ? (
+        <div className="mt-4 flex justify-center gap-2" aria-label="Escolher foto da galeria">
+          {images.map((url, index) => (
+            <button
+              key={`${url}-${index}`}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              aria-label={`Mostrar foto ${index + 1}`}
+              aria-current={index === activeIndex ? "true" : undefined}
+              className={`h-2.5 rounded-full transition-all ${
+                index === activeIndex ? "w-8 bg-primary" : "w-2.5 bg-primary/30 hover:bg-primary/60"
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
 function Index() {
   const { data: settings } = useQuery(settingsQuery);
+  const messageCardRef = useRef<HTMLElement>(null);
+  const [messageCardVisible, setMessageCardVisible] = useState(false);
 
   useEffect(() => {
     const key = "wedding-visit-recorded";
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
     void supabase.from("site_visits").insert({});
+  }, []);
+
+  useEffect(() => {
+    const element = messageCardRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") {
+      setMessageCardVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setMessageCardVisible(true);
+        observer.disconnect();
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
   }, []);
 
   const heroSrc = settings?.hero_image_url || heroImage;
@@ -107,21 +185,23 @@ function Index() {
 
   const intro = (
     <>
-      <p className="eyebrow">{eyebrow}</p>
-      <h1 className="mt-4 font-display text-6xl leading-tight sm:text-8xl">{names}</h1>
+      <h1 className="type-couple-names leading-tight">{names}</h1>
       {settings?.wedding_date ? (
-        <p className="mt-4 font-display text-xl tracking-[0.2em] text-foreground">
-          {settings.wedding_date}
-        </p>
+        <p className="type-wedding-date mt-4 tracking-[0.2em]">{settings.wedding_date}</p>
       ) : null}
       <Ornament />
     </>
   );
 
   const messageCard = (
-    <aside className="w-full rounded-sm border border-border/70 bg-card/65 p-8 text-left shadow-[var(--shadow-soft)] backdrop-blur-md sm:p-10">
-      <p className="eyebrow text-primary">Recadinhos dos Noivos</p>
-      <p className="mt-4 text-justify text-sm leading-relaxed text-muted-foreground">{message}</p>
+    <aside
+      ref={messageCardRef}
+      className={`w-full rounded-sm border-2 border-primary/45 bg-card/45 p-8 text-left shadow-[var(--shadow-soft)] backdrop-blur-lg transition-[opacity,transform] duration-1000 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none sm:p-10 ${
+        messageCardVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+      }`}
+    >
+      <p className="eyebrow text-primary">Recadinho dos Noivos</p>
+      <p className="type-body mt-4 text-justify leading-relaxed text-muted-foreground">{message}</p>
     </aside>
   );
 
@@ -137,7 +217,7 @@ function Index() {
           {intro}
           <div className="mt-8 w-full max-w-lg">{messageCard}</div>
           <Nav buttons={buttons} />
-          <Gallery images={gallery} />
+          <Gallery images={gallery} title={eyebrow} />
           <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
             Área dos noivos
           </Link>
@@ -153,7 +233,7 @@ function Index() {
           {intro}
           <div className="mt-8 w-full max-w-lg">{messageCard}</div>
           <Nav buttons={buttons} />
-          <Gallery images={gallery} />
+          <Gallery images={gallery} title={eyebrow} />
           <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
             Área dos noivos
           </Link>
@@ -181,7 +261,7 @@ function Index() {
         {intro}
         <div className="mt-8 w-full max-w-lg">{messageCard}</div>
         <Nav buttons={buttons} />
-        <Gallery images={gallery} />
+        <Gallery images={gallery} title={eyebrow} />
         <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
           Área dos noivos
         </Link>

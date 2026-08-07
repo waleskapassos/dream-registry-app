@@ -30,6 +30,16 @@ export function ThemeStyle() {
     `--font-display:${FONTS[settings.font_heading as keyof typeof FONTS] ?? FONTS.elegant};--font-sans:${FONTS[settings.font_body as keyof typeof FONTS] ?? FONTS.modern};--heading-font-weight:${settings.font_heading_weight === 700 ? 700 : 300};--body-font-weight:${settings.font_body_weight === 700 ? 700 : 400};--heading-font-style:${settings.font_heading_style === "italic" ? "italic" : "normal"};--body-font-style:${settings.font_body_style === "italic" ? "italic" : "normal"};`,
   );
 
+  const typography = settings.typography_styles;
+  const typographyRules = Object.entries(typography)
+    .map(([key, style]) => {
+      const font = FONTS[style.font] ?? FONTS.modern;
+      const color = HEX.test(style.color) ? style.color : "inherit";
+      return `--type-${key}-font:${font};--type-${key}-color:${color};--type-${key}-size:${style.size}px;--type-${key}-weight:${style.bold ? 700 : 400};--type-${key}-style:${style.italic ? "italic" : "normal"};`;
+    })
+    .join("");
+  rules.push(typographyRules);
+
   if (HEX.test(settings.theme_primary)) {
     const fg = isLight(settings.theme_primary) ? "oklch(0.28 0.014 92)" : "oklch(0.985 0.008 92)";
     rules.push(

@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "../lib/cart";
 import { Toaster } from "../components/ui/sonner";
 import { ThemeStyle } from "../components/ThemeStyle";
+import { YouTubeMusic } from "../components/YouTubeMusic";
 
 import { supabase } from "../integrations/supabase/client";
 
@@ -134,6 +135,7 @@ function RootComponent() {
       <CartProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <YouTubeMusic />
         <Toaster position="top-center" />
       </CartProvider>
     </QueryClientProvider>
