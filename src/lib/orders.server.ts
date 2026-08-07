@@ -79,7 +79,7 @@ export async function createOrderRecord(input: OrderInput) {
   const giftIds = input.items.map((item) => item.giftId);
   const { data: gifts, error: giftsError } = await supabaseAdmin
     .from("gifts")
-    .select("id, title, price_cents, is_active")
+    .select("id, title, price_cents, is_active, quantity, purchased_count")
     .in("id", giftIds);
   if (giftsError) throw new Error(giftsError.message);
 
@@ -90,6 +90,7 @@ export async function createOrderRecord(input: OrderInput) {
     .map((item) => {
       const gift = available.find((entry) => entry.id === item.giftId);
       if (!gift) return null;
+      if (gift.quantity > 0 && gift.purchased_count + item.quantity > gift.quantity) return null;
       return {
         gift_id: gift.id,
         title: gift.title,
@@ -99,7 +100,9 @@ export async function createOrderRecord(input: OrderInput) {
     })
     .filter((line): line is NonNullable<typeof line> => line !== null);
 
-  if (lines.length === 0) throw new Error("Nenhum presente válido no carrinho.");
+  if (lines.length !== input.items.length) {
+    throw new Error("Um dos presentes escolhidos já está indisponível. Atualize a lista.");
+  }
 
   const totalCents = lines.reduce((sum, line) => sum + line.unit_price_cents * line.quantity, 0);
 

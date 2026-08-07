@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { PageShell } from "@/components/PageShell";
@@ -91,9 +92,9 @@ function GiftsPage() {
           return (
             <article
               key={gift.id}
-              className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] transition-shadow hover:shadow-[var(--shadow-lift)]"
+              className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-[var(--shadow-soft)] transition-shadow ${soldOut ? "border-primary/50 opacity-80" : "border-border hover:shadow-[var(--shadow-lift)]"}`}
             >
-              <div className="aspect-square w-full overflow-hidden bg-secondary/60 p-2 sm:p-4">
+              <div className="relative aspect-square w-full overflow-hidden bg-secondary/60 p-2 sm:p-4">
                 {gift.image_url ? (
                   <img
                     src={gift.image_url}
@@ -106,10 +107,21 @@ function GiftsPage() {
                     ✦
                   </div>
                 )}
+                {soldOut ? (
+                  <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow sm:left-3 sm:top-3 sm:text-xs">
+                    <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                    Presenteado
+                  </span>
+                ) : null}
               </div>
 
               <div className="flex flex-1 flex-col p-3 sm:p-5">
                 <h2 className="font-display text-lg leading-tight sm:text-2xl">{gift.title}</h2>
+                {soldOut ? (
+                  <p className="mt-2 rounded-xl border border-primary/35 bg-primary/10 p-2 text-xs font-medium leading-relaxed text-foreground sm:p-3 sm:text-sm">
+                    Os noivos já foram presenteados com esse item.
+                  </p>
+                ) : null}
                 {gift.description ? (
                   <p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {gift.description}
@@ -134,27 +146,35 @@ function GiftsPage() {
                         ? "Adicionado ✓"
                         : "Adicionar ao carrinho"}
                   </Button>
-                  <Button
-                    variant="quiet"
-                    className="h-auto min-h-10 whitespace-normal px-2 py-2 text-xs leading-tight sm:px-4 sm:text-sm"
-                    asChild
-                    disabled={soldOut}
-                  >
-                    <Link
-                      to="/carrinho"
-                      onClick={() => {
-                        if (soldOut) return;
-                        add({
-                          giftId: gift.id,
-                          title: gift.title,
-                          priceCents: gift.price_cents,
-                          imageUrl: gift.image_url,
-                        });
-                      }}
+                  {soldOut ? (
+                    <Button
+                      variant="quiet"
+                      className="h-auto min-h-10 whitespace-normal px-2 py-2 text-xs leading-tight sm:px-4 sm:text-sm"
+                      disabled
                     >
-                      Comprar agora
-                    </Link>
-                  </Button>
+                      Item indisponível
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="quiet"
+                      className="h-auto min-h-10 whitespace-normal px-2 py-2 text-xs leading-tight sm:px-4 sm:text-sm"
+                      asChild
+                    >
+                      <Link
+                        to="/carrinho"
+                        onClick={() => {
+                          add({
+                            giftId: gift.id,
+                            title: gift.title,
+                            priceCents: gift.price_cents,
+                            imageUrl: gift.image_url,
+                          });
+                        }}
+                      >
+                        Comprar agora
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             </article>
