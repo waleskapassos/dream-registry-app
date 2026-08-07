@@ -68,6 +68,7 @@
   );
   --shadow-soft: 0 18px 40px -28px color-mix(in oklab, var(--foreground) 45%, transparent);
   --shadow-lift: 0 26px 60px -34px color-mix(in oklab, var(--foreground) 55%, transparent);
+  --shadow-home-action: 0 14px 28px -12px color-mix(in oklab, var(--primary) 72%, transparent);
 }
 
 .dark {
@@ -128,4 +129,50 @@
   justify-content: center;
   gap: 0.75rem;
   color: var(--color-gold);
+}
+
+@keyframes home-action-border {
+  0%,
+  100% {
+    opacity: 0.45;
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 18px 2px color-mix(in oklab, var(--gold) 55%, transparent);
+  }
+}
+
+@layer components {
+  .home-action {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .home-action::before {
+    position: absolute;
+    z-index: -1;
+    inset: -3px;
+    content: "";
+    border-radius: calc(var(--radius-2xl) + 3px);
+    border: 2px solid color-mix(in oklab, var(--gold) 45%, white);
+    animation: home-action-border 2.4s ease-in-out infinite;
+  }
+
+  .home-action::after {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    border-radius: inherit;
+    background: var(--primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-action::before {
+      animation: none;
+      opacity: 1;
+    }
+  }
 }

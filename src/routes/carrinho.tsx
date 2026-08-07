@@ -67,6 +67,7 @@ function CartPage() {
       });
 
       if (order.paymentUrl) {
+        clear();
         window.location.assign(order.paymentUrl);
         return;
       }

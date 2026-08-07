@@ -1,5 +1,78 @@
 import type { OrderInput } from "./orders.schema";
 
+const DEFAULT_APP_URL = "https://dream-registry-app.lovable.app";
+
+type MercadoPagoPreference = {
+  init_point?: string;
+  sandbox_init_point?: string;
+  message?: string;
+};
+
+async function createMercadoPagoPreference({
+  input,
+  orderId,
+  lines,
+}: {
+  input: OrderInput;
+  orderId: string;
+  lines: Array<{ gift_id: string; title: string; unit_price_cents: number; quantity: number }>;
+}) {
+  const accessToken = process.env["MERCADO_PAGO_ACCESS_TOKEN"];
+  if (!accessToken) {
+    throw new Error("Mercado Pago ainda não foi configurado.");
+  }
+
+  const appUrl = (process.env["APP_URL"] || DEFAULT_APP_URL).replace(/\/$/, "");
+  const excludedPaymentTypes = [
+    { id: "ticket" },
+    { id: "bank_transfer" },
+    { id: input.paymentMethod === "credit" ? "debit_card" : "credit_card" },
+  ];
+
+  const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": `wedding-order-${orderId}`,
+    },
+    body: JSON.stringify({
+      items: lines.map((line) => ({
+        id: line.gift_id,
+        title: line.title,
+        currency_id: "BRL",
+        quantity: line.quantity,
+        unit_price: line.unit_price_cents / 100,
+      })),
+      payer: input.guestEmail ? { name: input.guestName, email: input.guestEmail } : undefined,
+      external_reference: orderId,
+      back_urls: {
+        success: `${appUrl}/pagamento?status=approved`,
+        pending: `${appUrl}/pagamento?status=pending`,
+        failure: `${appUrl}/pagamento?status=failure`,
+      },
+      auto_return: "approved",
+      notification_url: `${appUrl}/api/mercado-pago`,
+      payment_methods: {
+        excluded_payment_types: excludedPaymentTypes,
+        installments: input.paymentMethod === "credit" ? 12 : 1,
+      },
+      statement_descriptor: "LISTA PRESENTES",
+    }),
+  });
+
+  const preference = (await response.json()) as MercadoPagoPreference;
+  if (!response.ok) {
+    console.error("[Mercado Pago] Falha ao criar preferência", response.status, preference.message);
+    throw new Error("Não foi possível abrir o pagamento no Mercado Pago.");
+  }
+
+  const isTestToken = accessToken.startsWith("TEST-");
+  const paymentUrl = isTestToken ? preference.sandbox_init_point : preference.init_point;
+  if (!paymentUrl) throw new Error("O Mercado Pago não retornou o endereço de pagamento.");
+  return paymentUrl;
+}
+
 export async function createOrderRecord(input: OrderInput) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -32,28 +105,6 @@ export async function createOrderRecord(input: OrderInput) {
 
   const totalCents = lines.reduce((sum, line) => sum + line.unit_price_cents * line.quantity, 0);
 
-  let paymentUrl = "";
-  if (input.paymentMethod === "credit" || input.paymentMethod === "debit") {
-    if (input.items.length !== 1 || input.items[0]?.quantity !== 1) {
-      throw new Error("Para pagar com cartão, escolha um único presente por vez.");
-    }
-    paymentUrl =
-      (input.paymentMethod === "credit"
-        ? available[0]?.nubank_credit_payment_url
-        : available[0]?.nubank_debit_payment_url
-      )?.trim() ?? "";
-    if (!paymentUrl) {
-      throw new Error(
-        "Este presente ainda não possui um link Nubank para esta forma de pagamento.",
-      );
-    }
-    try {
-      new URL(paymentUrl);
-    } catch {
-      throw new Error("O link de pagamento Nubank deste presente é inválido.");
-    }
-  }
-
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
     .insert({
@@ -73,6 +124,11 @@ export async function createOrderRecord(input: OrderInput) {
     .from("order_items")
     .insert(lines.map((line) => ({ ...line, order_id: order.id })));
   if (itemsError) throw new Error(itemsError.message);
+
+  let paymentUrl = "";
+  if (input.paymentMethod === "credit" || input.paymentMethod === "debit") {
+    paymentUrl = await createMercadoPagoPreference({ input, orderId: order.id, lines });
+  }
 
   return { orderId: order.id, totalCents: order.total_cents, paymentUrl };
 }

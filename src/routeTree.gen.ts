@@ -15,8 +15,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as ConfirmarRouteImport } from './routes/confirmar'
 import { Route as LocalRouteImport } from './routes/local'
+import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as PresentesRouteImport } from './routes/presentes'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiMercadoPagoRouteImport } from './routes/api.mercado-pago'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,6 +49,11 @@ const LocalRoute = LocalRouteImport.update({
   path: '/local',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PagamentoRoute = PagamentoRouteImport.update({
+  id: '/pagamento',
+  path: '/pagamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PresentesRoute = PresentesRouteImport.update({
   id: '/presentes',
   path: '/presentes',
@@ -57,6 +64,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiMercadoPagoRoute = ApiMercadoPagoRouteImport.update({
+  id: '/api/mercado-pago',
+  path: '/api/mercado-pago',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -64,8 +76,10 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/confirmar': typeof ConfirmarRoute
   '/local': typeof LocalRoute
+  '/pagamento': typeof PagamentoRoute
   '/presentes': typeof PresentesRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/api/mercado-pago': typeof ApiMercadoPagoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -73,8 +87,10 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/confirmar': typeof ConfirmarRoute
   '/local': typeof LocalRoute
+  '/pagamento': typeof PagamentoRoute
   '/presentes': typeof PresentesRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/api/mercado-pago': typeof ApiMercadoPagoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,8 +100,10 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/confirmar': typeof ConfirmarRoute
   '/local': typeof LocalRoute
+  '/pagamento': typeof PagamentoRoute
   '/presentes': typeof PresentesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/api/mercado-pago': typeof ApiMercadoPagoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,8 +113,10 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/confirmar'
     | '/local'
+    | '/pagamento'
     | '/presentes'
     | '/admin'
+    | '/api/mercado-pago'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -104,8 +124,10 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/confirmar'
     | '/local'
+    | '/pagamento'
     | '/presentes'
     | '/admin'
+    | '/api/mercado-pago'
   id:
     | '__root__'
     | '/'
@@ -114,8 +136,10 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/confirmar'
     | '/local'
+    | '/pagamento'
     | '/presentes'
     | '/_authenticated/admin'
+    | '/api/mercado-pago'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -125,7 +149,9 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   ConfirmarRoute: typeof ConfirmarRoute
   LocalRoute: typeof LocalRoute
+  PagamentoRoute: typeof PagamentoRoute
   PresentesRoute: typeof PresentesRoute
+  ApiMercadoPagoRoute: typeof ApiMercadoPagoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pagamento': {
+      id: '/pagamento'
+      path: '/pagamento'
+      fullPath: '/pagamento'
+      preLoaderRoute: typeof PagamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/presentes': {
       id: '/presentes'
       path: '/presentes'
@@ -185,6 +218,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/mercado-pago': {
+      id: '/api/mercado-pago'
+      path: '/api/mercado-pago'
+      fullPath: '/api/mercado-pago'
+      preLoaderRoute: typeof ApiMercadoPagoRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -207,7 +247,9 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   ConfirmarRoute: ConfirmarRoute,
   LocalRoute: LocalRoute,
+  PagamentoRoute: PagamentoRoute,
   PresentesRoute: PresentesRoute,
+  ApiMercadoPagoRoute: ApiMercadoPagoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

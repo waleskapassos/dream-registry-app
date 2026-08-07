@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Gift, MapPin, HeartHandshake } from "lucide-react";
+import { Gift, MapPin, HeartHandshake, ChevronRight } from "lucide-react";
 
 import heroImage from "@/assets/hero-wedding.jpg";
 import { Ornament } from "@/components/PageShell";
@@ -35,7 +35,7 @@ const icons = {
 
 function Nav({ buttons }: { buttons: HomeButton[] }) {
   return (
-    <nav className="mt-10 grid w-full max-w-md gap-4">
+    <nav aria-label="Acessos principais" className="mt-8 grid w-full max-w-md gap-4 sm:mt-10">
       {buttons
         .filter((button) => button.visible)
         .map((button) => {
@@ -44,17 +44,23 @@ function Nav({ buttons }: { buttons: HomeButton[] }) {
             <Link
               key={button.to}
               to={button.to}
-              className="group flex items-center gap-4 rounded-sm border border-primary/30 bg-card/75 px-6 py-5 text-left shadow-[var(--shadow-soft)] backdrop-blur-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[var(--shadow-lift)]"
+              className="home-action group flex min-h-20 items-center gap-4 rounded-2xl border-2 border-transparent bg-primary px-5 py-4 text-left text-primary-foreground shadow-[var(--shadow-home-action)] transition-all active:scale-[0.98] motion-reduce:transition-none sm:px-6 sm:py-5 sm:hover:-translate-y-0.5 sm:hover:bg-primary/90 sm:hover:shadow-[var(--shadow-lift)]"
             >
-              <Icon className="size-6 shrink-0 text-primary transition-colors group-hover:text-primary-foreground" />
-              <span className="min-w-0">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15">
+                <Icon className="size-6" aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
                 <span className="block font-display text-xl tracking-[0.08em]">{button.label}</span>
                 {button.hint ? (
-                  <span className="mt-0.5 block text-xs text-muted-foreground transition-colors group-hover:text-primary-foreground/80">
+                  <span className="mt-0.5 block text-xs text-primary-foreground/85">
                     {button.hint}
                   </span>
                 ) : null}
               </span>
+              <ChevronRight
+                className="size-5 shrink-0 opacity-90 transition-transform group-hover:translate-x-1"
+                aria-hidden="true"
+              />
             </Link>
           );
         })}
@@ -113,7 +119,7 @@ function Index() {
   );
 
   const messageCard = (
-    <aside className="w-full rounded-sm border border-border/70 bg-card/85 p-6 text-left shadow-[var(--shadow-soft)] backdrop-blur-sm sm:p-8">
+    <aside className="w-full rounded-sm border border-border/70 bg-card/65 p-8 text-left shadow-[var(--shadow-soft)] backdrop-blur-md sm:p-10">
       <p className="eyebrow text-primary">Recadinhos dos Noivos</p>
       <p className="mt-4 text-justify text-sm leading-relaxed text-muted-foreground">{message}</p>
     </aside>
@@ -129,7 +135,7 @@ function Index() {
         />
         <div className="mx-auto flex max-w-xl flex-col items-center px-5 py-16 text-center">
           {intro}
-          <div className="mt-8">{messageCard}</div>
+          <div className="mt-8 w-full max-w-lg">{messageCard}</div>
           <Nav buttons={buttons} />
           <Gallery images={gallery} />
           <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
@@ -145,7 +151,7 @@ function Index() {
       <div className="min-h-screen bg-background">
         <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-20 text-center">
           {intro}
-          <div className="mt-8">{messageCard}</div>
+          <div className="mt-8 w-full max-w-lg">{messageCard}</div>
           <Nav buttons={buttons} />
           <Gallery images={gallery} />
           <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
@@ -173,7 +179,7 @@ function Index() {
 
       <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-20 text-center">
         {intro}
-        <div className="mt-8 w-full max-w-md">{messageCard}</div>
+        <div className="mt-8 w-full max-w-lg">{messageCard}</div>
         <Nav buttons={buttons} />
         <Gallery images={gallery} />
         <Link to="/auth" className="eyebrow mt-12 hover:text-foreground">
