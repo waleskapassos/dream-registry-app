@@ -44,9 +44,6 @@ const emptyGift = {
   price: "",
   quantity: "1",
   image_url: "" as string | null,
-  nubank_payment_url: "",
-  nubank_credit_payment_url: "",
-  nubank_debit_payment_url: "",
   is_active: true,
 };
 
@@ -137,9 +134,6 @@ function AdminPage() {
       price: (gift.price_cents / 100).toFixed(2),
       quantity: String(gift.quantity),
       image_url: gift.image_url,
-      nubank_payment_url: gift.nubank_payment_url ?? "",
-      nubank_credit_payment_url: gift.nubank_credit_payment_url ?? "",
-      nubank_debit_payment_url: gift.nubank_debit_payment_url ?? "",
       is_active: gift.is_active,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -222,9 +216,6 @@ function AdminPage() {
         price_cents: Math.round(Number(draft.price.replace(",", ".")) * 100) || 0,
         quantity: Number(draft.quantity) || 0,
         image_url: draft.image_url || null,
-        nubank_payment_url: draft.nubank_payment_url.trim(),
-        nubank_credit_payment_url: draft.nubank_credit_payment_url.trim(),
-        nubank_debit_payment_url: draft.nubank_debit_payment_url.trim(),
         is_active: draft.is_active,
       };
       const { error } = draft.id
@@ -501,34 +492,6 @@ function AdminPage() {
               value={draft.quantity}
               onChange={(event) => setDraft({ ...draft, quantity: event.target.value })}
             />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="nubank-credit-payment-url">Link Nubank — cartão de crédito</Label>
-            <Input
-              id="nubank-credit-payment-url"
-              type="url"
-              placeholder="https://..."
-              value={draft.nubank_credit_payment_url}
-              onChange={(event) =>
-                setDraft({ ...draft, nubank_credit_payment_url: event.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="nubank-debit-payment-url">Link Nubank — cartão de débito</Label>
-            <Input
-              id="nubank-debit-payment-url"
-              type="url"
-              placeholder="https://..."
-              value={draft.nubank_debit_payment_url}
-              onChange={(event) =>
-                setDraft({ ...draft, nubank_debit_payment_url: event.target.value })
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              Crie no app Nubank links com o mesmo valor deste presente e cole cada um no campo
-              correto.
-            </p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="image">Foto do presente</Label>

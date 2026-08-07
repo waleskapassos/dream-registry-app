@@ -79,9 +79,7 @@ export async function createOrderRecord(input: OrderInput) {
   const giftIds = input.items.map((item) => item.giftId);
   const { data: gifts, error: giftsError } = await supabaseAdmin
     .from("gifts")
-    .select(
-      "id, title, price_cents, is_active, nubank_credit_payment_url, nubank_debit_payment_url",
-    )
+    .select("id, title, price_cents, is_active")
     .in("id", giftIds);
   if (giftsError) throw new Error(giftsError.message);
 
