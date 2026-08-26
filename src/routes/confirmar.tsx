@@ -96,7 +96,6 @@ function RsvpPage() {
 
   return (
     <PageShell
-      eyebrow="RSVP"
       title="Confirmar Presença"
       intro="Preencha os campos abaixo para nos ajudar a organizar cada detalhe."
     >

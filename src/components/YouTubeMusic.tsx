@@ -9,7 +9,7 @@ import { getYouTubeVideoId } from "@/lib/youtube";
 export function YouTubeMusic() {
   const { data: settings } = useQuery(settingsQuery);
   const { count } = useCart();
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(true);
   const [dismissed, setDismissed] = useState(false);
   const videoId = getYouTubeVideoId(settings?.youtube_music_url ?? "");
 
