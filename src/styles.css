@@ -120,10 +120,11 @@
 @layer components {
   .type-couple-names {
     font-family: var(--type-couple_names-font, var(--font-display));
-    font-size: clamp(2.75rem, var(--type-couple_names-size, 72px), 7.5rem);
+    font-size: min(var(--type-couple_names-size, 72px), 11vw);
     font-weight: var(--type-couple_names-weight, 400);
     font-style: var(--type-couple_names-style, normal);
     color: var(--type-couple_names-color, inherit);
+    white-space: nowrap;
   }
 
   .type-wedding-date {

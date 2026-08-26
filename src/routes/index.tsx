@@ -186,9 +186,9 @@ function Index() {
   const intro = (
     <>
       <h1 className="type-couple-names leading-tight">{names}</h1>
-      {settings?.wedding_date ? (
-        <p className="type-wedding-date mt-4 tracking-[0.2em]">{settings.wedding_date}</p>
-      ) : null}
+      <p className="type-wedding-date mt-4 tracking-[0.2em]">
+        05 de dezembro de 2026
+      </p>
       <Ornament />
     </>
   );
