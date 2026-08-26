@@ -44,9 +44,9 @@ function Nav({ buttons }: { buttons: HomeButton[] }) {
             <Link
               key={button.to}
               to={button.to}
-              className="home-action group flex min-h-20 items-center gap-4 rounded-2xl border-2 border-transparent bg-primary px-5 py-4 text-left text-primary-foreground shadow-[var(--shadow-home-action)] transition-all active:scale-[0.98] motion-reduce:transition-none sm:px-6 sm:py-5 sm:hover:-translate-y-0.5 sm:hover:bg-primary/90 sm:hover:shadow-[var(--shadow-lift)]"
+              className="home-action group flex min-h-20 touch-manipulation items-center gap-4 rounded-2xl border-2 border-primary-foreground/25 bg-primary px-5 py-4 text-left text-primary-foreground shadow-[var(--shadow-home-action)] transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02] hover:border-primary-foreground/70 hover:brightness-110 hover:shadow-[var(--shadow-lift)] focus-visible:-translate-y-1 focus-visible:scale-[1.02] focus-visible:border-primary-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/35 active:scale-[1.03] active:border-primary-foreground active:brightness-125 active:shadow-[var(--shadow-lift)] motion-reduce:transition-none sm:px-6 sm:py-5"
             >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15 transition-all duration-200 group-hover:scale-110 group-hover:bg-primary-foreground/25 group-focus-visible:scale-110 group-focus-visible:bg-primary-foreground/25 group-active:scale-110 group-active:bg-primary-foreground/30">
                 <Icon className="size-6" aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
@@ -58,7 +58,7 @@ function Nav({ buttons }: { buttons: HomeButton[] }) {
                 ) : null}
               </span>
               <ChevronRight
-                className="size-5 shrink-0 opacity-90 transition-transform group-hover:translate-x-1"
+                className="size-5 shrink-0 opacity-90 transition-transform group-hover:translate-x-1.5 group-focus-visible:translate-x-1.5 group-active:translate-x-1.5"
                 aria-hidden="true"
               />
             </Link>
