@@ -1026,8 +1026,8 @@ function AdminPage() {
               }
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Aceita links do YouTube, youtu.be, Shorts ou embed. Por regra dos navegadores, o
-              visitante toca em “Ouvir nossa música” para iniciar o som.
+              Aceita links do YouTube, youtu.be, Shorts ou embed. A música começa sem som e é
+              liberada automaticamente após a primeira interação do visitante.
             </p>
             {config?.youtube_music_url && !getYouTubeVideoId(config.youtube_music_url) ? (
               <p className="text-sm font-medium text-destructive" role="alert">
