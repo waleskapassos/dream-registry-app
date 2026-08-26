@@ -176,6 +176,7 @@ function Index() {
   const heroSrc = settings?.hero_image_url || heroImage;
   const eyebrow = settings?.hero_eyebrow || "Vamos nos casar";
   const names = settings?.couple_names || "Nossos Nomes";
+  const weddingDate = settings?.wedding_date || "05 de dezembro de 2026";
   const message =
     settings?.welcome_message ||
     "É uma alegria enorme ter você por perto neste dia. Aqui você encontra tudo o que precisa saber.";
@@ -186,9 +187,7 @@ function Index() {
   const intro = (
     <>
       <h1 className="type-couple-names leading-tight">{names}</h1>
-      <p className="type-wedding-date mt-4 tracking-[0.2em]">
-        05 de dezembro de 2026
-      </p>
+      <p className="type-wedding-date mt-4 tracking-[0.2em]">{weddingDate}</p>
       <Ornament />
     </>
   );

@@ -288,7 +288,7 @@ function AdminPage() {
 
   const configFields: Array<[TextField, string]> = [
     ["couple_names", "Nomes dos noivos"],
-    ["wedding_date", "Data do casamento"],
+    ["wedding_date", "Texto da data na tela principal"],
     ["ceremony_time", "Horário"],
     ["ceremony_venue", "Nome do local"],
     ["ceremony_address", "Endereço completo"],

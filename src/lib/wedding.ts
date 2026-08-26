@@ -120,7 +120,7 @@ export const DEFAULT_HOME_BUTTONS: HomeButton[] = [
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   couple_names: "Nossos Nomes",
-  wedding_date: "",
+  wedding_date: "05 de dezembro de 2026",
   ceremony_venue: "",
   ceremony_address: "",
   maps_url: "",
