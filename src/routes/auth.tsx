@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,21 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
+  beforeLoad: async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (adminRole) throw redirect({ to: "/admin", replace: true });
+  },
   head: () => ({
     meta: [
       { title: "Área dos Noivos — Acesso" },
@@ -63,7 +78,7 @@ function AuthPage() {
       if (!adminRole) {
         throw new Error("Esta conta não tem permissão de administrador.");
       }
-      navigate({ to: "/admin" });
+      navigate({ to: "/admin", replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível entrar.");
     } finally {
