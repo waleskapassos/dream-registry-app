@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { z } from "zod";
 
 import { PageShell } from "@/components/PageShell";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { Button } from "@/components/ui/button";
+import { verifyMercadoPagoPayment } from "@/lib/payments.functions";
 
 const searchSchema = z.object({
   status: z.enum(["approved", "pending", "failure"]).catch("pending"),
+  payment_id: z.string().regex(/^\d+$/).optional().catch(undefined),
+  collection_id: z.string().regex(/^\d+$/).optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/pagamento")({
@@ -41,12 +45,21 @@ const states = {
 } as const;
 
 function PaymentResultPage() {
-  const { status } = Route.useSearch();
-  const state = states[status];
+  const search = Route.useSearch();
+  const paymentId = search.payment_id ?? search.collection_id;
+  const verification = useQuery({
+    queryKey: ["mercado-pago-payment", paymentId],
+    queryFn: () => verifyMercadoPagoPayment({ data: paymentId! }),
+    enabled: Boolean(paymentId) && search.status !== "failure",
+    retry: 2,
+  });
+  const verifiedStatus =
+    search.status === "failure" ? "failure" : (verification.data?.status ?? "pending");
+  const state = states[verifiedStatus];
 
   return (
     <PageShell eyebrow={state.eyebrow} title={state.title} intro={state.message}>
-      <CheckoutProgress current={status === "approved" ? 4 : 3} />
+      <CheckoutProgress current={verifiedStatus === "approved" ? 4 : 3} />
       <div className="mx-auto flex max-w-md flex-col items-center gap-6 rounded-2xl border border-border bg-card p-8 text-center shadow-[var(--shadow-soft)]">
         <state.Icon className={`size-14 ${state.color}`} aria-hidden="true" />
         <Button variant="elegant" className="w-full" asChild>

@@ -21,13 +21,19 @@ async function createMercadoPagoPreference({
     throw new Error("Mercado Pago ainda não foi configurado para produção.");
   }
   if (accessToken.startsWith("TEST-")) {
-    throw new Error("O pagamento está com uma credencial de teste. Configure a credencial de produção do Mercado Pago.");
+    throw new Error(
+      "O pagamento está com uma credencial de teste. Configure a credencial de produção do Mercado Pago.",
+    );
   }
 
   const appUrl = (process.env["APP_URL"] || DEFAULT_APP_URL).replace(/\/$/, "");
   const excludedPaymentTypes = [
     { id: "ticket" },
     { id: "bank_transfer" },
+    { id: "account_money" },
+    { id: "atm" },
+    { id: "prepaid_card" },
+    { id: "digital_currency" },
     { id: input.paymentMethod === "credit" ? "debit_card" : "credit_card" },
   ];
 
