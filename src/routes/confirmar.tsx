@@ -137,11 +137,16 @@ function RsvpPage() {
               <Input
                 id="guests_count"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={10}
                 value={form.guests_count}
+                onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) =>
-                  setForm({ ...form, guests_count: Number(event.target.value) || 1 })
+                  setForm({
+                    ...form,
+                    guests_count: Math.min(10, Math.max(1, Number(event.target.value) || 1)),
+                  })
                 }
               />
             </div>
