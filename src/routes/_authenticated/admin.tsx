@@ -70,6 +70,8 @@ function contrastRatio(foreground: string, background: string) {
   return ((lighter ?? 0) + 0.05) / ((darker ?? 0) + 0.05);
 }
 
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
 function AdminPage() {
   const [area, setArea] = useState<"layout" | "presentes" | "confirmacoes" | "estatisticas">(
     "layout",
@@ -303,6 +305,8 @@ function AdminPage() {
     ["theme_accent", "Cor de destaque"],
     ["theme_text", "Cor dos textos"],
   ];
+  const themeColorsAreValid =
+    !!config && colorFields.every(([field]) => !config[field] || HEX_COLOR.test(config[field]));
 
   const layouts: Array<[SiteSettings["hero_layout"], string, string]> = [
     ["full", "Foto cheia", "Foto ocupando a tela inteira com os textos por cima"],
@@ -1067,26 +1071,52 @@ function AdminPage() {
 
       <section hidden={area !== "layout"} className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Cores do site</h2>
-        <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-3">
+        <p className="text-sm text-muted-foreground">
+          Digite o código hexadecimal de cada cor para aplicar uma paleta global em todo o site.
+        </p>
+        <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2">
           {colorFields.map(([field, label]) => (
             <div key={field} className="space-y-2">
               <Label htmlFor={field}>{label}</Label>
               <div className="flex items-center gap-2">
                 <Input
-                  id={field}
                   type="color"
-                  className="h-10 w-16 p-1"
-                  value={config?.[field] || "#b9a678"}
+                  aria-label={`Selecionar ${label.toLowerCase()}`}
+                  className="h-10 w-12 shrink-0 cursor-pointer p-1"
+                  value={
+                    config?.[field] && HEX_COLOR.test(config[field]) ? config[field] : "#b9a678"
+                  }
                   onChange={(event) =>
-                    config && setConfig({ ...config, [field]: event.target.value })
+                    config && setConfig({ ...config, [field]: event.target.value.toUpperCase() })
+                  }
+                />
+                <Input
+                  id={field}
+                  type="text"
+                  inputMode="text"
+                  maxLength={7}
+                  placeholder="#B9A678"
+                  value={config?.[field] ?? ""}
+                  aria-invalid={Boolean(config?.[field] && !HEX_COLOR.test(config[field]))}
+                  onChange={(event) =>
+                    config && setConfig({ ...config, [field]: event.target.value.toUpperCase() })
                   }
                 />
                 {config?.[field] ? (
-                  <Button variant="quiet" onClick={() => void saveConfigValues({ [field]: "" })}>
+                  <Button
+                    type="button"
+                    variant="quiet"
+                    onClick={() => void saveConfigValues({ [field]: "" })}
+                  >
                     Padrão
                   </Button>
                 ) : null}
               </div>
+              {config?.[field] && !HEX_COLOR.test(config[field]) ? (
+                <p className="text-xs text-destructive">
+                  Use o formato #RRGGBB, por exemplo #B9A678.
+                </p>
+              ) : null}
             </div>
           ))}
           {textContrast !== null && textContrast < 4.5 ? (
@@ -1120,7 +1150,7 @@ function AdminPage() {
           <div className="sm:col-span-3">
             <Button
               variant="elegant"
-              disabled={!config}
+              disabled={!config || !themeColorsAreValid}
               onClick={() =>
                 config &&
                 void saveConfigValues({
