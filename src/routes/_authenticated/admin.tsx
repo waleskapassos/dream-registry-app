@@ -7,6 +7,17 @@ import { Pencil, Trash2 } from "lucide-react";
 import heroFallback from "@/assets/hero-wedding.jpg";
 import { PageShell } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -120,6 +131,7 @@ function AdminPage() {
   const [editingGalleryTitle, setEditingGalleryTitle] = useState(false);
 
   const [savingGift, setSavingGift] = useState(false);
+  const [deletingGiftId, setDeletingGiftId] = useState<string | null>(null);
   const [config, setConfig] = useState<SiteSettings | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const textContrast = config
@@ -237,13 +249,18 @@ function AdminPage() {
   }
 
   async function removeGift(id: string) {
-    const { error } = await supabase.from("gifts").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
+    setDeletingGiftId(id);
+    try {
+      const { error } = await supabase.from("gifts").delete().eq("id", id);
+      if (error) throw error;
+      if (draft.id === id) setDraft(emptyGift);
+      await queryClient.invalidateQueries({ queryKey: ["gifts"] });
+      toast.success("Presente excluído");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível excluir o presente");
+    } finally {
+      setDeletingGiftId(null);
     }
-    await queryClient.invalidateQueries({ queryKey: ["gifts"] });
-    toast.success("Presente removido");
   }
 
   async function setOrderPaid(orderId: string, paid: boolean) {
@@ -800,22 +817,40 @@ function AdminPage() {
                   {formatBRL(gift.price_cents)} · {gift.is_active ? "visível" : "oculto"}
                 </p>
               </div>
-              <Button
-                variant="quiet"
-                size="icon"
-                onClick={() => editGift(gift)}
-                aria-label="Editar"
-              >
+              <Button variant="quiet" onClick={() => editGift(gift)}>
                 <Pencil className="size-4" />
+                Editar
               </Button>
-              <Button
-                variant="quiet"
-                size="icon"
-                onClick={() => void removeGift(gift.id)}
-                aria-label="Remover"
-              >
-                <Trash2 className="size-4" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="quiet"
+                    className="text-destructive hover:text-destructive"
+                    disabled={deletingGiftId === gift.id}
+                  >
+                    <Trash2 className="size-4" />
+                    {deletingGiftId === gift.id ? "Excluindo…" : "Excluir"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir “{gift.title}”?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      O presente será removido da lista. O histórico de pedidos e pagamentos já
+                      realizados será preservado. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => void removeGift(gift.id)}
+                    >
+                      Excluir presente
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </li>
           ))}
           {gifts && gifts.length === 0 ? (
