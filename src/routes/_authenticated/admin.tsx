@@ -1389,11 +1389,6 @@ function AdminPage() {
                       Acompanhantes: {rsvp.companion_names}
                     </p>
                   ) : null}
-                  {rsvp.dietary_restrictions ? (
-                    <p className="mt-1 text-muted-foreground">
-                      Restrições alimentares: {rsvp.dietary_restrictions}
-                    </p>
-                  ) : null}
                 </li>
               ))}
               {rsvps.length === 0 ? (

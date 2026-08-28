@@ -28,25 +28,19 @@ export const Route = createFileRoute("/confirmar")({
 
 const rsvpSchema = z.object({
   guest_name: z.string().trim().min(2, "Informe seu nome completo").max(120),
-  guest_email: z.string().trim().email("E-mail inválido").max(200).or(z.literal("")),
-  guest_phone: z.string().trim().max(40).or(z.literal("")),
   guests_count: z.number().int().min(1).max(10),
   attending: z.boolean(),
   message: z.string().trim().max(500).or(z.literal("")),
   companion_names: z.string().trim().max(500).or(z.literal("")),
-  dietary_restrictions: z.string().trim().max(500).or(z.literal("")),
 });
 
 function RsvpPage() {
   const [form, setForm] = useState({
     guest_name: "",
-    guest_email: "",
-    guest_phone: "",
     guests_count: 1,
     attending: true,
     message: "",
     companion_names: "",
-    dietary_restrictions: "",
   });
   const [done, setDone] = useState(false);
 
@@ -55,13 +49,10 @@ function RsvpPage() {
       const parsed = rsvpSchema.parse(form);
       const { error } = await supabase.from("rsvps").insert({
         name: parsed.guest_name,
-        email: parsed.guest_email || null,
-        phone: parsed.guest_phone || null,
         guests: parsed.guests_count,
         attending: parsed.attending,
         message: parsed.message || null,
         companion_names: parsed.companion_names || null,
-        dietary_restrictions: parsed.dietary_restrictions || null,
       });
       if (error) throw error;
     },
@@ -100,7 +91,7 @@ function RsvpPage() {
       intro="Preencha os campos abaixo para nos ajudar a organizar cada detalhe."
     >
       <form
-        className="mx-auto max-w-lg space-y-5 rounded-sm border border-border bg-card p-8 shadow-[var(--shadow-soft)]"
+        className="mx-auto max-w-lg space-y-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-8"
         onSubmit={(event) => {
           event.preventDefault();
           mutation.mutate();
@@ -115,28 +106,6 @@ function RsvpPage() {
             value={form.guest_name}
             onChange={(event) => setForm({ ...form, guest_name: event.target.value })}
           />
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="guest_email">E-mail (opcional)</Label>
-            <Input
-              id="guest_email"
-              type="email"
-              maxLength={200}
-              value={form.guest_email}
-              onChange={(event) => setForm({ ...form, guest_email: event.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="guest_phone">Telefone (opcional)</Label>
-            <Input
-              id="guest_phone"
-              maxLength={40}
-              value={form.guest_phone}
-              onChange={(event) => setForm({ ...form, guest_phone: event.target.value })}
-            />
-          </div>
         </div>
 
         <fieldset className="space-y-2">
@@ -189,17 +158,6 @@ function RsvpPage() {
                 />
               </div>
             ) : null}
-            <div className="space-y-2">
-              <Label htmlFor="dietary_restrictions">Restrições alimentares (opcional)</Label>
-              <Textarea
-                id="dietary_restrictions"
-                rows={2}
-                maxLength={500}
-                placeholder="Alergias, intolerâncias ou alimentação especial"
-                value={form.dietary_restrictions}
-                onChange={(event) => setForm({ ...form, dietary_restrictions: event.target.value })}
-              />
-            </div>
           </div>
         ) : null}
 
