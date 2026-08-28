@@ -37,6 +37,18 @@ function LocationPage() {
   const embedUrl = address
     ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
     : "";
+  const receptionAddress = settings?.reception_address?.trim() ?? "";
+  const receptionMapsUrl =
+    settings?.reception_maps_url?.trim() ||
+    (receptionAddress
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(receptionAddress)}`
+      : "");
+  const receptionEmbedUrl = receptionAddress
+    ? `https://www.google.com/maps?q=${encodeURIComponent(receptionAddress)}&output=embed`
+    : "";
+  const hasReception = Boolean(
+    settings?.reception_venue?.trim() || receptionAddress || settings?.reception_time?.trim(),
+  );
   const dateMatch = settings?.wedding_date?.match(/(\d{1,2})\D(\d{1,2})\D(\d{4})/);
   const timeMatch = settings?.ceremony_time?.match(/(\d{1,2})[:h](\d{2})/i);
   const calendarUrl = (() => {
@@ -143,6 +155,53 @@ function LocationPage() {
               O endereço ainda será divulgado pelos noivos.
             </p>
           )}
+
+          {hasReception ? (
+            <>
+              <div className="rounded-sm border border-border bg-card p-8 text-center shadow-[var(--shadow-soft)]">
+                <MapPin className="mx-auto size-6 text-primary" />
+                <p className="mt-4 text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                  Local da recepção
+                </p>
+                <h2 className="mt-2 font-display text-3xl">
+                  {settings?.reception_venue || "Local a confirmar"}
+                </h2>
+                {receptionAddress ? (
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    {receptionAddress}
+                  </p>
+                ) : null}
+                {settings?.reception_time ? (
+                  <p className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="size-4 text-primary" />
+                    {settings.reception_time}
+                  </p>
+                ) : null}
+                {receptionMapsUrl ? (
+                  <div className="mt-8">
+                    <Button variant="gold" asChild>
+                      <a href={receptionMapsUrl} target="_blank" rel="noreferrer noopener">
+                        <Navigation className="size-4" />
+                        Abrir mapa da recepção
+                      </a>
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+
+              {receptionEmbedUrl ? (
+                <div className="overflow-hidden rounded-sm border border-border shadow-[var(--shadow-soft)]">
+                  <iframe
+                    title="Mapa do local da recepção"
+                    src={receptionEmbedUrl}
+                    loading="lazy"
+                    className="h-80 w-full border-0"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </div>
       )}
     </PageShell>

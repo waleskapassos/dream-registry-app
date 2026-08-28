@@ -74,6 +74,10 @@ export type SiteSettings = {
   ceremony_address: string;
   maps_url: string;
   ceremony_time: string;
+  reception_venue: string;
+  reception_address: string;
+  reception_maps_url: string;
+  reception_time: string;
   pix_key: string;
   pix_name: string;
   welcome_message: string;
@@ -96,6 +100,8 @@ export type SiteSettings = {
   typography_styles: TypographyStyles;
   youtube_music_url: string;
 };
+
+export const RECEPTION_STORAGE_KEY = "reception_location";
 
 export const DEFAULT_HOME_BUTTONS: HomeButton[] = [
   {
@@ -125,6 +131,10 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   ceremony_address: "",
   maps_url: "",
   ceremony_time: "",
+  reception_venue: "",
+  reception_address: "",
+  reception_maps_url: "",
+  reception_time: "",
   pix_key: "",
   pix_name: "",
   welcome_message: "",
@@ -210,6 +220,15 @@ export const settingsQuery = {
     const layout = String(row["hero_layout"]);
     const gallery = row["gallery_images"];
     const overlayOpacity = Number(row["hero_overlay_opacity"]);
+    const typographySource =
+      typeof row["typography_styles"] === "object" && row["typography_styles"] !== null
+        ? (row["typography_styles"] as Record<string, unknown>)
+        : {};
+    const receptionSource =
+      typeof typographySource[RECEPTION_STORAGE_KEY] === "object" &&
+      typographySource[RECEPTION_STORAGE_KEY] !== null
+        ? (typographySource[RECEPTION_STORAGE_KEY] as Record<string, unknown>)
+        : {};
     return {
       ...DEFAULT_SETTINGS,
       ...(data as object),
@@ -223,6 +242,10 @@ export const settingsQuery = {
         : [],
       home_buttons: normalizeButtons(row["home_buttons"]),
       typography_styles: normalizeTypography(row["typography_styles"]),
+      reception_venue: String(receptionSource["venue"] ?? ""),
+      reception_address: String(receptionSource["address"] ?? ""),
+      reception_maps_url: String(receptionSource["maps_url"] ?? ""),
+      reception_time: String(receptionSource["time"] ?? ""),
     };
   },
 };

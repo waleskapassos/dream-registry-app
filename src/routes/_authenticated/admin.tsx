@@ -26,6 +26,7 @@ import { formatBRL } from "@/lib/format";
 import { getYouTubeVideoId } from "@/lib/youtube";
 import {
   FONT_OPTIONS,
+  RECEPTION_STORAGE_KEY,
   adminGiftsQuery,
   settingsQuery,
   type Gift,
@@ -303,7 +304,26 @@ function AdminPage() {
     if (!config) return;
     setSavingConfig(true);
     try {
-      const { error } = await supabase.from("site_settings").update(config).eq("id", true);
+      const {
+        reception_venue,
+        reception_address,
+        reception_maps_url,
+        reception_time,
+        ...databaseConfig
+      } = config;
+      const typographyStyles = {
+        ...databaseConfig.typography_styles,
+        [RECEPTION_STORAGE_KEY]: {
+          venue: reception_venue,
+          address: reception_address,
+          maps_url: reception_maps_url,
+          time: reception_time,
+        },
+      };
+      const { error } = await supabase
+        .from("site_settings")
+        .update({ ...databaseConfig, typography_styles: typographyStyles })
+        .eq("id", true);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
       toast.success("Informações atualizadas");
@@ -322,6 +342,10 @@ function AdminPage() {
     | "ceremony_venue"
     | "ceremony_address"
     | "maps_url"
+    | "reception_venue"
+    | "reception_address"
+    | "reception_maps_url"
+    | "reception_time"
     | "pix_key"
     | "pix_name"
     | "hero_eyebrow"
@@ -330,10 +354,14 @@ function AdminPage() {
   const configFields: Array<[TextField, string]> = [
     ["couple_names", "Nomes dos noivos"],
     ["wedding_date", "Texto da data na tela principal"],
-    ["ceremony_time", "Horário"],
-    ["ceremony_venue", "Nome do local"],
-    ["ceremony_address", "Endereço completo"],
-    ["maps_url", "Link do mapa (opcional)"],
+    ["ceremony_time", "Horário da cerimônia"],
+    ["ceremony_venue", "Local da cerimônia"],
+    ["ceremony_address", "Endereço da cerimônia"],
+    ["maps_url", "Link do mapa da cerimônia (opcional)"],
+    ["reception_time", "Horário da recepção"],
+    ["reception_venue", "Local da recepção"],
+    ["reception_address", "Endereço da recepção"],
+    ["reception_maps_url", "Link do mapa da recepção (opcional)"],
     ["pix_key", "Chave Pix (conta PJ)"],
     ["pix_name", "Nome do recebedor Pix"],
   ];
