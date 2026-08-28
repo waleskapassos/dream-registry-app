@@ -125,6 +125,9 @@ function AdminPage() {
   });
   const paidOrders = orders.filter((order) => order.status === "paid");
   const receivedTotalCents = paidOrders.reduce((total, order) => total + order.total_cents, 0);
+  const giftListTotalCents = (gifts ?? [])
+    .filter((gift) => gift.is_active)
+    .reduce((total, gift) => total + gift.price_cents * gift.quantity, 0);
 
   const [draft, setDraft] = useState(emptyGift);
   const [uploading, setUploading] = useState(false);
@@ -491,7 +494,7 @@ function AdminPage() {
       <section
         hidden={area !== "estatisticas"}
         id="estatisticas"
-        className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
       >
         <div className="rounded-sm border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Acessos</p>
@@ -506,6 +509,12 @@ function AdminPage() {
             Pagamentos confirmados
           </p>
           <p className="font-display text-3xl">{paidOrders.length}</p>
+        </div>
+        <div className="rounded-sm border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Valor total da lista
+          </p>
+          <p className="font-display text-3xl">{formatBRL(giftListTotalCents)}</p>
         </div>
         <div className="rounded-sm border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Total recebido</p>
