@@ -146,10 +146,11 @@
 
   .type-heading {
     font-family: var(--type-heading-font, var(--font-display));
-    font-size: var(--type-heading-size, 40px);
+    font-size: min(var(--type-heading-size, 40px), 12vw);
     font-weight: var(--type-heading-weight, 400);
     font-style: var(--type-heading-style, normal);
     color: var(--type-heading-color, inherit);
+    overflow-wrap: anywhere;
   }
 
   .type-gallery-title {

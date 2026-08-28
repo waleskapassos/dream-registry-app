@@ -430,7 +430,7 @@ function AdminPage() {
 
   return (
     <PageShell eyebrow="Área restrita" title="Painel dos Noivos">
-      <nav className="mb-8 grid gap-2 sm:grid-cols-4">
+      <nav className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <button
           type="button"
           onClick={() => setArea("layout")}
@@ -504,7 +504,7 @@ function AdminPage() {
         </h2>
         <form
           onSubmit={saveGift}
-          className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2"
+          className="grid min-w-0 gap-5 rounded-sm border border-border bg-card p-4 shadow-[var(--shadow-soft)] sm:grid-cols-2 sm:p-6"
         >
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="title">Título</Label>
@@ -581,7 +581,7 @@ function AdminPage() {
 
       <section hidden={area !== "layout"} id="layout" className="mt-12 space-y-4">
         <h2 className="font-display text-2xl">Tipografia</h2>
-        <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2">
+        <div className="grid min-w-0 gap-5 rounded-sm border border-border bg-card p-4 shadow-[var(--shadow-soft)] sm:grid-cols-2 sm:p-6">
           <div className="space-y-2">
             <Label htmlFor="font_heading">Fonte dos títulos</Label>
             <select
@@ -617,7 +617,7 @@ function AdminPage() {
             </select>
           </div>
           {(["heading", "body"] as const).map((target) => (
-            <div key={target} className="grid grid-cols-2 gap-3">
+            <div key={target} className="grid min-w-0 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor={`font_${target}_weight`}>
                   {target === "heading" ? "Peso dos títulos" : "Peso dos textos"}
@@ -686,7 +686,7 @@ function AdminPage() {
                 return (
                   <fieldset
                     key={group}
-                    className="grid gap-4 rounded-2xl border border-border bg-background/60 p-4 sm:grid-cols-2 lg:grid-cols-5"
+                    className="grid min-w-0 gap-4 rounded-2xl border border-border bg-background/60 p-4 sm:grid-cols-2 lg:grid-cols-5"
                   >
                     <legend className="px-2 font-display text-lg">{label}</legend>
                     <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-5">
@@ -775,7 +775,7 @@ function AdminPage() {
           </div>
           {config ? (
             <div
-              className="space-y-4 rounded-2xl border-2 border-dashed border-primary/50 p-6 text-center sm:col-span-2"
+              className="min-w-0 space-y-4 overflow-hidden rounded-2xl border-2 border-dashed border-primary/50 p-4 text-center sm:col-span-2 sm:p-6"
               style={{
                 background: config.theme_background || undefined,
                 color: config.theme_text || undefined,
@@ -826,53 +826,55 @@ function AdminPage() {
           {gifts?.map((gift) => (
             <li
               key={gift.id}
-              className="flex items-center gap-4 rounded-sm border border-border bg-card p-4"
+              className="flex min-w-0 flex-col gap-4 rounded-sm border border-border bg-card p-4 sm:flex-row sm:items-center"
             >
               <div className="size-16 shrink-0 overflow-hidden rounded-sm bg-secondary">
                 {gift.image_url ? (
                   <img src={gift.image_url} alt={gift.title} className="size-full object-cover" />
                 ) : null}
               </div>
-              <div className="flex-1">
-                <p className="font-display text-lg">{gift.title}</p>
+              <div className="min-w-0 flex-1 text-center sm:text-left">
+                <p className="break-words font-display text-lg">{gift.title}</p>
                 <p className="text-sm text-muted-foreground">
                   {formatBRL(gift.price_cents)} · {gift.is_active ? "visível" : "oculto"}
                 </p>
               </div>
-              <Button variant="quiet" onClick={() => editGift(gift)}>
-                <Pencil className="size-4" />
-                Editar
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="quiet"
-                    className="text-destructive hover:text-destructive"
-                    disabled={deletingGiftId === gift.id}
-                  >
-                    <Trash2 className="size-4" />
-                    {deletingGiftId === gift.id ? "Excluindo…" : "Excluir"}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir “{gift.title}”?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      O presente será removido da lista. O histórico de pedidos e pagamentos já
-                      realizados será preservado. Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={() => void removeGift(gift.id)}
+              <div className="flex w-full flex-wrap justify-center gap-2 sm:w-auto sm:justify-end">
+                <Button variant="quiet" onClick={() => editGift(gift)}>
+                  <Pencil className="size-4" />
+                  Editar
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="quiet"
+                      className="text-destructive hover:text-destructive"
+                      disabled={deletingGiftId === gift.id}
                     >
-                      Excluir presente
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <Trash2 className="size-4" />
+                      {deletingGiftId === gift.id ? "Excluindo…" : "Excluir"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir “{gift.title}”?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        O presente será removido da lista. O histórico de pedidos e pagamentos já
+                        realizados será preservado. Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => void removeGift(gift.id)}
+                      >
+                        Excluir presente
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </li>
           ))}
           {gifts && gifts.length === 0 ? (
@@ -1131,11 +1133,11 @@ function AdminPage() {
         <p className="text-sm text-muted-foreground">
           Digite o código hexadecimal de cada cor para aplicar uma paleta global em todo o site.
         </p>
-        <div className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2">
+        <div className="grid min-w-0 gap-5 rounded-sm border border-border bg-card p-4 shadow-[var(--shadow-soft)] sm:grid-cols-2 sm:p-6">
           {colorFields.map(([field, label]) => (
             <div key={field} className="space-y-2">
               <Label htmlFor={field}>{label}</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
                 <Input
                   type="color"
                   aria-label={`Selecionar ${label.toLowerCase()}`}
@@ -1153,6 +1155,7 @@ function AdminPage() {
                   inputMode="text"
                   maxLength={7}
                   placeholder="#B9A678"
+                  className="min-w-0 flex-1"
                   value={config?.[field] ?? ""}
                   aria-invalid={Boolean(config?.[field] && !HEX_COLOR.test(config[field]))}
                   onChange={(event) =>
@@ -1338,7 +1341,7 @@ function AdminPage() {
         {config ? (
           <form
             onSubmit={saveConfig}
-            className="grid gap-5 rounded-sm border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:grid-cols-2"
+            className="grid min-w-0 gap-5 rounded-sm border border-border bg-card p-4 shadow-[var(--shadow-soft)] sm:grid-cols-2 sm:p-6"
           >
             {configFields.map(([field, label]) => (
               <div key={field} className="space-y-2">
@@ -1405,7 +1408,7 @@ function AdminPage() {
             </p>
             <ul className="mt-4 space-y-3 text-sm">
               {orders.map((order) => (
-                <li key={order.id} className="border-b border-border pb-3">
+                <li key={order.id} className="min-w-0 break-words border-b border-border pb-3">
                   <strong>{order.guest_name}</strong> · {formatBRL(order.total_cents)}
                   <br />
                   <span className="text-muted-foreground">

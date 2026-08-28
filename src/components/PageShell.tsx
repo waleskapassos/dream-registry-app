@@ -30,7 +30,7 @@ export function PageShell({
   const { count } = useCart();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-background">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
           <button
@@ -64,7 +64,7 @@ export function PageShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 pb-24 pt-12">
+      <main className="mx-auto min-w-0 max-w-5xl px-4 pb-24 pt-10 sm:px-5 sm:pt-12">
         <div className="text-center">
           {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
           <h1 className="type-heading mt-3">{title}</h1>
