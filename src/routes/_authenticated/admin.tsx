@@ -107,7 +107,8 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("*, order_items(title, quantity)")
+        .neq("status", "deleted")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -132,6 +133,7 @@ function AdminPage() {
 
   const [savingGift, setSavingGift] = useState(false);
   const [deletingGiftId, setDeletingGiftId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [config, setConfig] = useState<SiteSettings | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const textContrast = config
@@ -274,6 +276,26 @@ function AdminPage() {
     }
     await queryClient.invalidateQueries({ queryKey: ["orders"] });
     toast.success(paid ? "Pagamento confirmado" : "Pagamento marcado como pendente");
+  }
+
+  async function removeOrder(orderId: string) {
+    setDeletingOrderId(orderId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "deleted" })
+        .eq("id", orderId);
+      if (error) throw error;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["gifts"] }),
+      ]);
+      toast.success("Registro excluído e presente disponibilizado novamente");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível excluir o registro");
+    } finally {
+      setDeletingOrderId(null);
+    }
   }
 
   async function saveConfig(event: React.FormEvent) {
@@ -1390,15 +1412,56 @@ function AdminPage() {
                     {order.payment_method} ·{" "}
                     {order.status === "paid" ? "pago" : "aguardando pagamento"}
                   </span>
-                  <Button
-                    type="button"
-                    variant={order.status === "paid" ? "quiet" : "gold"}
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => void setOrderPaid(order.id, order.status !== "paid")}
-                  >
-                    {order.status === "paid" ? "Marcar pendente" : "Confirmar pagamento"}
-                  </Button>
+                  {order.order_items.length > 0 ? (
+                    <p className="mt-1 text-muted-foreground">
+                      {order.order_items
+                        .map((item) => `${item.quantity}× ${item.title}`)
+                        .join(", ")}
+                    </p>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={order.status === "paid" ? "quiet" : "gold"}
+                      size="sm"
+                      onClick={() => void setOrderPaid(order.id, order.status !== "paid")}
+                    >
+                      {order.status === "paid" ? "Marcar pendente" : "Confirmar pagamento"}
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="quiet"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          disabled={deletingOrderId === order.id}
+                        >
+                          <Trash2 className="size-4" />
+                          {deletingOrderId === order.id ? "Excluindo…" : "Excluir registro"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir este presente recebido?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            O registro de {order.guest_name} será removido do painel e do total
+                            recebido. Os presentes deste pedido ficarão disponíveis novamente na
+                            lista. Esta ação deve ser usada apenas para testes ou cancelamentos.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => void removeOrder(order.id)}
+                          >
+                            Excluir e disponibilizar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </li>
               ))}
               {orders.length === 0 ? (

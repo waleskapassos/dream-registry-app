@@ -34,7 +34,7 @@ export async function confirmMercadoPagoPayment(paymentId: string): Promise<Paym
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
-    .select("id, total_cents, payment_method")
+    .select("id, total_cents, payment_method, status")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -50,6 +50,10 @@ export async function confirmMercadoPagoPayment(paymentId: string): Promise<Paym
       console.error("[Mercado Pago] Pagamento aprovado não corresponde ao pedido", order.id);
       throw new Error("Os dados do pagamento não correspondem ao pedido.");
     }
+
+    // Pedidos removidos pelo painel permanecem arquivados para auditoria e não devem
+    // voltar a consumir o estoque quando o Mercado Pago repetir uma notificação.
+    if (order.status === "deleted") return "approved";
 
     const { error: updateError } = await supabaseAdmin
       .from("orders")
