@@ -149,14 +149,23 @@ function Index() {
   const [messageCardVisible, setMessageCardVisible] = useState(false);
 
   useEffect(() => {
-    const key = "wedding-visit-recorded";
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, "pending");
+    const persistentKey = "wedding-visitor-recorded";
+    const legacySessionKey = "wedding-visit-recorded";
+    if (localStorage.getItem(persistentKey)) return;
+
+    // Quem já foi contado nesta sessão antes da atualização passa a ser lembrado
+    // permanentemente sem gerar um acesso adicional durante a migração.
+    if (sessionStorage.getItem(legacySessionKey) === "1") {
+      localStorage.setItem(persistentKey, "1");
+      return;
+    }
+
+    localStorage.setItem(persistentKey, "pending");
 
     void recordSiteVisit()
-      .then(() => sessionStorage.setItem(key, "1"))
+      .then(() => localStorage.setItem(persistentKey, "1"))
       .catch((error: unknown) => {
-        sessionStorage.removeItem(key);
+        localStorage.removeItem(persistentKey);
         console.error("[Visitas] Falha ao registrar acesso", error);
       });
   }, []);
