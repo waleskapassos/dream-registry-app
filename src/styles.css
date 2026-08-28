@@ -189,6 +189,15 @@
   color: var(--color-gold);
 }
 
+@media (max-width: 480px) {
+  .message-eyebrow {
+    max-width: 100%;
+    white-space: nowrap;
+    font-size: min(var(--type-eyebrow-size, 11px), 2.8vw);
+    letter-spacing: min(0.32em, 1vw);
+  }
+}
+
 @keyframes home-action-border {
   0%,
   100% {

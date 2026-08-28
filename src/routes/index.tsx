@@ -210,11 +210,11 @@ function Index() {
   const messageCard = (
     <aside
       ref={messageCardRef}
-      className={`w-full rounded-sm border-2 border-primary/45 bg-card/45 p-8 text-left shadow-[var(--shadow-soft)] backdrop-blur-lg transition-[opacity,transform] duration-1000 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none sm:p-10 ${
+      className={`w-full rounded-sm border-2 border-primary/45 bg-card/45 p-6 text-left shadow-[var(--shadow-soft)] backdrop-blur-lg transition-[opacity,transform] duration-1000 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none sm:p-10 ${
         messageCardVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
       }`}
     >
-      <p className="eyebrow text-primary">Recadinho dos Noivos</p>
+      <p className="eyebrow message-eyebrow text-primary">Recadinho dos Noivos</p>
       <p className="type-body mt-4 text-justify leading-relaxed text-muted-foreground">{message}</p>
     </aside>
   );
