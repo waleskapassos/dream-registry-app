@@ -6,7 +6,7 @@ import { Gift, MapPin, HeartHandshake, ChevronLeft, ChevronRight } from "lucide-
 import heroImage from "@/assets/hero-wedding.jpg";
 import { Ornament } from "@/components/PageShell";
 import { settingsQuery, type HomeButton } from "@/lib/wedding";
-import { supabase } from "@/integrations/supabase/client";
+import { recordSiteVisit } from "@/lib/visits.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -151,8 +151,14 @@ function Index() {
   useEffect(() => {
     const key = "wedding-visit-recorded";
     if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, "1");
-    void supabase.from("site_visits").insert({});
+    sessionStorage.setItem(key, "pending");
+
+    void recordSiteVisit()
+      .then(() => sessionStorage.setItem(key, "1"))
+      .catch((error: unknown) => {
+        sessionStorage.removeItem(key);
+        console.error("[Visitas] Falha ao registrar acesso", error);
+      });
   }, []);
 
   useEffect(() => {
