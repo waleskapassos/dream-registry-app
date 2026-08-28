@@ -4,7 +4,6 @@ const DEFAULT_APP_URL = "https://dream-registry-app.lovable.app";
 
 type MercadoPagoPreference = {
   init_point?: string;
-  sandbox_init_point?: string;
   message?: string;
 };
 
@@ -19,7 +18,10 @@ async function createMercadoPagoPreference({
 }) {
   const accessToken = process.env["MERCADO_PAGO_ACCESS_TOKEN"];
   if (!accessToken) {
-    throw new Error("Mercado Pago ainda não foi configurado.");
+    throw new Error("Mercado Pago ainda não foi configurado para produção.");
+  }
+  if (accessToken.startsWith("TEST-")) {
+    throw new Error("O pagamento está com uma credencial de teste. Configure a credencial de produção do Mercado Pago.");
   }
 
   const appUrl = (process.env["APP_URL"] || DEFAULT_APP_URL).replace(/\/$/, "");
@@ -67,8 +69,7 @@ async function createMercadoPagoPreference({
     throw new Error("Não foi possível abrir o pagamento no Mercado Pago.");
   }
 
-  const isTestToken = accessToken.startsWith("TEST-");
-  const paymentUrl = isTestToken ? preference.sandbox_init_point : preference.init_point;
+  const paymentUrl = preference.init_point;
   if (!paymentUrl) throw new Error("O Mercado Pago não retornou o endereço de pagamento.");
   return paymentUrl;
 }

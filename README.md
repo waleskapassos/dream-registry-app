@@ -24,3 +24,18 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Pagamentos em produção
+
+Crédito e débito usam o Checkout Pro do Mercado Pago. No ambiente publicado do
+Lovable, configure estes secrets:
+
+```env
+APP_URL=https://dream-registry-app.lovable.app
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
+```
+
+Use o Access Token de **Produção** da conta PJ que receberá os pagamentos. Chaves
+que começam com `TEST-` são recusadas para impedir que o site publicado envie o
+convidado ao checkout de teste. Depois de salvar os secrets, publique novamente
+o projeto.

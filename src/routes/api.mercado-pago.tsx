@@ -12,6 +12,9 @@ export const Route = createFileRoute("/api/mercado-pago")({
       POST: async ({ request }) => {
         const accessToken = process.env["MERCADO_PAGO_ACCESS_TOKEN"];
         if (!accessToken) return new Response("Not configured", { status: 503 });
+        if (accessToken.startsWith("TEST-")) {
+          return new Response("Production credential required", { status: 503 });
+        }
 
         const body = (await request.json().catch(() => null)) as {
           type?: string;

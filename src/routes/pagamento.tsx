@@ -18,16 +18,16 @@ export const Route = createFileRoute("/pagamento")({
 const states = {
   approved: {
     eyebrow: "Pagamento aprovado",
-    title: "Muito obrigado pelo presente!",
-    message: "O pagamento foi confirmado e os noivos já receberam o seu carinho.",
+    title: "Obrigada por nos presentear!",
+    message: "Seu carinho nos ajuda a construir essa nova fase das nossas vidas!",
     Icon: CheckCircle2,
     color: "text-emerald-600",
   },
   pending: {
     eyebrow: "Pagamento em análise",
-    title: "Estamos aguardando a confirmação",
+    title: "Obrigada por nos presentear!",
     message:
-      "O Mercado Pago está processando o pagamento. A confirmação será atualizada automaticamente.",
+      "Seu carinho nos ajuda a construir essa nova fase das nossas vidas! O Mercado Pago ainda está processando a confirmação do pagamento.",
     Icon: Clock3,
     color: "text-amber-600",
   },
