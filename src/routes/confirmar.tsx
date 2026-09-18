@@ -32,6 +32,8 @@ const rsvpSchema = z.object({
   attending: z.boolean(),
   message: z.string().trim().max(500).or(z.literal("")),
   companion_names: z.string().trim().max(500).or(z.literal("")),
+  has_children: z.boolean(),
+  child_ages: z.string().trim().max(200).or(z.literal("")),
 });
 
 function RsvpPage() {
@@ -41,6 +43,8 @@ function RsvpPage() {
     attending: true,
     message: "",
     companion_names: "",
+    has_children: false,
+    child_ages: "",
   });
   const [done, setDone] = useState(false);
 
@@ -53,6 +57,8 @@ function RsvpPage() {
         attending: parsed.attending,
         message: parsed.message || null,
         companion_names: parsed.companion_names || null,
+        has_children: parsed.attending && parsed.has_children,
+        child_ages: parsed.attending && parsed.has_children ? parsed.child_ages || null : null,
       });
       if (error) throw error;
     },
@@ -160,6 +166,39 @@ function RsvpPage() {
                   placeholder="Informe um nome por linha"
                   value={form.companion_names}
                   onChange={(event) => setForm({ ...form, companion_names: event.target.value })}
+                />
+              </div>
+            ) : null}
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Você levará alguma criança?</legend>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant={form.has_children ? "gold" : "quiet"}
+                  className="flex-1"
+                  onClick={() => setForm({ ...form, has_children: true })}
+                >
+                  Sim
+                </Button>
+                <Button
+                  type="button"
+                  variant={!form.has_children ? "gold" : "quiet"}
+                  className="flex-1"
+                  onClick={() => setForm({ ...form, has_children: false, child_ages: "" })}
+                >
+                  Não
+                </Button>
+              </div>
+            </fieldset>
+            {form.has_children ? (
+              <div className="space-y-2">
+                <Label htmlFor="child_ages">Qual a idade da(s) criança(s)?</Label>
+                <Input
+                  id="child_ages"
+                  maxLength={200}
+                  placeholder="Ex.: 3 e 7 anos"
+                  value={form.child_ages}
+                  onChange={(event) => setForm({ ...form, child_ages: event.target.value })}
                 />
               </div>
             ) : null}

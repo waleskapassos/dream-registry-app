@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
 
 import heroFallback from "@/assets/hero-wedding.jpg";
 import { PageShell } from "@/components/PageShell";
@@ -84,6 +84,11 @@ function contrastRatio(foreground: string, background: string) {
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
+function csvCell(value: string | number | boolean | null | undefined): string {
+  const text = value == null ? "" : String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
 function AdminPage() {
   const [area, setArea] = useState<"layout" | "presentes" | "confirmacoes" | "estatisticas">(
     "layout",
@@ -143,6 +148,38 @@ function AdminPage() {
   const textContrast = config
     ? contrastRatio(config.theme_text || "#554f46", config.theme_background || "#faf7f0")
     : null;
+
+  function downloadRsvps() {
+    const headers = [
+      "Nome",
+      "Comparecerá",
+      "Total de pessoas",
+      "Acompanhantes",
+      "Levará criança",
+      "Idade(s) da(s) criança(s)",
+      "Recado",
+      "Confirmado em",
+    ];
+    const rows = rsvps.map((rsvp) => [
+      rsvp.name,
+      rsvp.attending ? "Sim" : "Não",
+      rsvp.guests,
+      rsvp.companion_names,
+      rsvp.has_children ? "Sim" : "Não",
+      rsvp.child_ages,
+      rsvp.message,
+      new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(
+        new Date(rsvp.created_at),
+      ),
+    ]);
+    const content = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([`\uFEFF${content}`], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "confirmacoes-de-presenca.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     if (settings && !config) setConfig(settings);
@@ -1411,7 +1448,16 @@ function AdminPage() {
         <h2 className="font-display text-2xl">Confirmações e presentes recebidos</h2>
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="rounded-sm border border-border bg-card p-5">
-            <h3 className="font-display text-xl">Confirmações de presença</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-display text-xl">Confirmações de presença</h3>
+              <Button type="button" variant="quiet" size="sm" onClick={downloadRsvps} disabled={rsvps.length === 0}>
+                <Download className="size-4" />
+                Baixar CSV para Google Sheets
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              O arquivo pode ser aberto diretamente ou importado no Google Sheets.
+            </p>
             <ul className="mt-4 space-y-3 text-sm">
               {rsvps.map((rsvp) => (
                 <li key={rsvp.id} className="border-b border-border pb-3">
@@ -1424,6 +1470,11 @@ function AdminPage() {
                   {rsvp.companion_names ? (
                     <p className="mt-1 text-muted-foreground">
                       Acompanhantes: {rsvp.companion_names}
+                    </p>
+                  ) : null}
+                  {rsvp.has_children ? (
+                    <p className="mt-1 text-muted-foreground">
+                      Criança(s): {rsvp.child_ages || "idade não informada"}
                     </p>
                   ) : null}
                 </li>

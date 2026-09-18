@@ -149,6 +149,8 @@ export type Database = {
           phone: string | null;
           companion_names: string | null;
           dietary_restrictions: string | null;
+          has_children: boolean;
+          child_ages: string | null;
         };
         Insert: {
           attending?: boolean;
@@ -161,6 +163,8 @@ export type Database = {
           phone?: string | null;
           companion_names?: string | null;
           dietary_restrictions?: string | null;
+          has_children?: boolean;
+          child_ages?: string | null;
         };
         Update: {
           attending?: boolean;
@@ -173,6 +177,8 @@ export type Database = {
           phone?: string | null;
           companion_names?: string | null;
           dietary_restrictions?: string | null;
+          has_children?: boolean;
+          child_ages?: string | null;
         };
         Relationships: [];
       };
