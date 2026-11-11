@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { formatBRL } from "@/lib/format";
 import { getYouTubeVideoId } from "@/lib/youtube";
 import {
@@ -474,7 +475,18 @@ function AdminPage() {
     if (!config) return;
     const next = { ...config, ...patch };
     setConfig(next);
-    const { error } = await supabase.from("site_settings").update(patch).eq("id", true);
+    const {
+      reception_venue: _receptionVenue,
+      reception_address: _receptionAddress,
+      reception_maps_url: _receptionMapsUrl,
+      reception_time: _receptionTime,
+      typography_styles: _typographyStyles,
+      ...dbPatch
+    } = patch;
+    const { error } = await supabase
+      .from("site_settings")
+      .update(dbPatch as Database["public"]["Tables"]["site_settings"]["Update"])
+      .eq("id", true);
     if (error) {
       toast.error(error.message);
       return;
