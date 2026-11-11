@@ -21,6 +21,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          nubank_credit_payment_url: string
+          nubank_debit_payment_url: string
+          nubank_payment_url: string
           price_cents: number
           purchased_count: number
           quantity: number
@@ -34,6 +37,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          nubank_credit_payment_url?: string
+          nubank_debit_payment_url?: string
+          nubank_payment_url?: string
           price_cents?: number
           purchased_count?: number
           quantity?: number
@@ -47,6 +53,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          nubank_credit_payment_url?: string
+          nubank_debit_payment_url?: string
+          nubank_payment_url?: string
           price_cents?: number
           purchased_count?: number
           quantity?: number
@@ -137,9 +146,12 @@ export type Database = {
       rsvps: {
         Row: {
           attending: boolean
+          child_ages: string | null
+          companion_names: string | null
           created_at: string
           email: string | null
           guests: number
+          has_children: boolean
           id: string
           message: string | null
           name: string
@@ -147,9 +159,12 @@ export type Database = {
         }
         Insert: {
           attending?: boolean
+          child_ages?: string | null
+          companion_names?: string | null
           created_at?: string
           email?: string | null
           guests?: number
+          has_children?: boolean
           id?: string
           message?: string | null
           name: string
@@ -157,9 +172,12 @@ export type Database = {
         }
         Update: {
           attending?: boolean
+          child_ages?: string | null
+          companion_names?: string | null
           created_at?: string
           email?: string | null
           guests?: number
+          has_children?: boolean
           id?: string
           message?: string | null
           name?: string
@@ -173,10 +191,17 @@ export type Database = {
           ceremony_time: string
           ceremony_venue: string
           couple_names: string
+          font_body: string
+          font_body_style: string
+          font_body_weight: number
+          font_heading: string
+          font_heading_style: string
+          font_heading_weight: number
           gallery_images: Json
           hero_eyebrow: string
           hero_image_url: string
           hero_layout: string
+          hero_overlay_opacity: number
           home_buttons: Json
           id: boolean
           maps_url: string
@@ -185,19 +210,29 @@ export type Database = {
           theme_accent: string
           theme_background: string
           theme_primary: string
+          theme_text: string
+          typography_styles: Json
           updated_at: string
           wedding_date: string
           welcome_message: string
+          youtube_music_url: string
         }
         Insert: {
           ceremony_address?: string
           ceremony_time?: string
           ceremony_venue?: string
           couple_names?: string
+          font_body?: string
+          font_body_style?: string
+          font_body_weight?: number
+          font_heading?: string
+          font_heading_style?: string
+          font_heading_weight?: number
           gallery_images?: Json
           hero_eyebrow?: string
           hero_image_url?: string
           hero_layout?: string
+          hero_overlay_opacity?: number
           home_buttons?: Json
           id?: boolean
           maps_url?: string
@@ -206,19 +241,29 @@ export type Database = {
           theme_accent?: string
           theme_background?: string
           theme_primary?: string
+          theme_text?: string
+          typography_styles?: Json
           updated_at?: string
           wedding_date?: string
           welcome_message?: string
+          youtube_music_url?: string
         }
         Update: {
           ceremony_address?: string
           ceremony_time?: string
           ceremony_venue?: string
           couple_names?: string
+          font_body?: string
+          font_body_style?: string
+          font_body_weight?: number
+          font_heading?: string
+          font_heading_style?: string
+          font_heading_weight?: number
           gallery_images?: Json
           hero_eyebrow?: string
           hero_image_url?: string
           hero_layout?: string
+          hero_overlay_opacity?: number
           home_buttons?: Json
           id?: boolean
           maps_url?: string
@@ -227,9 +272,27 @@ export type Database = {
           theme_accent?: string
           theme_background?: string
           theme_primary?: string
+          theme_text?: string
+          typography_styles?: Json
           updated_at?: string
           wedding_date?: string
           welcome_message?: string
+          youtube_music_url?: string
+        }
+        Relationships: []
+      }
+      site_visits: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
         }
         Relationships: []
       }
