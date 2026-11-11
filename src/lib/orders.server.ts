@@ -28,14 +28,13 @@ async function createMercadoPagoPreference({
 
   const appUrl = (process.env["APP_URL"] || DEFAULT_APP_URL).replace(/\/$/, "");
   const excludedPaymentTypes = [
-    { id: "ticket" },
-    { id: "bank_transfer" },
-    { id: "account_money" },
-    { id: "atm" },
-    { id: "prepaid_card" },
-    { id: "digital_currency" },
-    { id: input.paymentMethod === "credit" ? "debit_card" : "credit_card" },
-  ];
+  { id: "ticket" },
+  { id: "bank_transfer" },
+  { id: "atm" },
+  { id: "prepaid_card" },
+  { id: "digital_currency" },
+  { id: input.paymentMethod === "credit" ? "debit_card" : "credit_card" },
+];
 
   const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
     method: "POST",
