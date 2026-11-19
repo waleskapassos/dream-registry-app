@@ -129,6 +129,8 @@ function AdminPage() {
     },
   });
   const paidOrders = orders.filter((order) => order.status === "paid");
+  const attendingRsvps = rsvps.filter((rsvp) => rsvp.attending);
+  const confirmedGuestCount = attendingRsvps.reduce((total, rsvp) => total + rsvp.guests, 0);
   const receivedTotalCents = paidOrders.reduce((total, order) => total + order.total_cents, 0);
   const giftListTotalCents = (gifts ?? [])
     .filter((gift) => gift.is_active)
@@ -143,6 +145,7 @@ function AdminPage() {
   const [savingGift, setSavingGift] = useState(false);
   const [deletingGiftId, setDeletingGiftId] = useState<string | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [deletingRsvpId, setDeletingRsvpId] = useState<string | null>(null);
   const [config, setConfig] = useState<SiteSettings | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const textContrast = config
@@ -336,6 +339,22 @@ function AdminPage() {
       toast.error(error instanceof Error ? error.message : "Não foi possível excluir o registro");
     } finally {
       setDeletingOrderId(null);
+    }
+  }
+
+  async function removeRsvp(rsvpId: string) {
+    setDeletingRsvpId(rsvpId);
+    try {
+      const { error } = await supabase.from("rsvps").delete().eq("id", rsvpId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["rsvps"] });
+      toast.success("Confirmação excluída");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível excluir a confirmação",
+      );
+    } finally {
+      setDeletingRsvpId(null);
     }
   }
 
@@ -538,8 +557,13 @@ function AdminPage() {
           <p className="font-display text-3xl">{visits.length}</p>
         </div>
         <div className="rounded-sm border border-border bg-card p-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Confirmações</p>
-          <p className="font-display text-3xl">{rsvps.filter((rsvp) => rsvp.attending).length}</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Convidados confirmados
+          </p>
+          <p className="font-display text-3xl">{confirmedGuestCount}</p>
+          <p className="text-xs text-muted-foreground">
+            em {attendingRsvps.length} confirmação(ões)
+          </p>
         </div>
         <div className="rounded-sm border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -1460,23 +1484,61 @@ function AdminPage() {
             </p>
             <ul className="mt-4 space-y-3 text-sm">
               {rsvps.map((rsvp) => (
-                <li key={rsvp.id} className="border-b border-border pb-3">
-                  <strong>{rsvp.name}</strong> ·{" "}
-                  {rsvp.attending ? "vai comparecer" : "não poderá ir"}
-                  <br />
-                  <span className="text-muted-foreground">
-                    {rsvp.guests} acompanhante(s){rsvp.message ? ` — ${rsvp.message}` : ""}
-                  </span>
-                  {rsvp.companion_names ? (
-                    <p className="mt-1 text-muted-foreground">
-                      Acompanhantes: {rsvp.companion_names}
-                    </p>
-                  ) : null}
-                  {rsvp.has_children ? (
-                    <p className="mt-1 text-muted-foreground">
-                      Criança(s): {rsvp.child_ages || "idade não informada"}
-                    </p>
-                  ) : null}
+                <li
+                  key={rsvp.id}
+                  className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-start sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <strong>{rsvp.name}</strong> ·{" "}
+                    {rsvp.attending ? "vai comparecer" : "não poderá ir"}
+                    <br />
+                    <span className="text-muted-foreground">
+                      {rsvp.guests} {rsvp.guests === 1 ? "pessoa no total" : "pessoas no total"}
+                      {rsvp.message ? ` — ${rsvp.message}` : ""}
+                    </span>
+                    {rsvp.companion_names ? (
+                      <p className="mt-1 text-muted-foreground">
+                        Acompanhantes: {rsvp.companion_names}
+                      </p>
+                    ) : null}
+                    {rsvp.has_children ? (
+                      <p className="mt-1 text-muted-foreground">
+                        Criança(s): {rsvp.child_ages || "idade não informada"}
+                      </p>
+                    ) : null}
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="quiet"
+                        size="sm"
+                        className="self-start text-destructive hover:text-destructive"
+                        disabled={deletingRsvpId === rsvp.id}
+                      >
+                        <Trash2 className="size-4" />
+                        {deletingRsvpId === rsvp.id ? "Excluindo…" : "Excluir"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir a confirmação de {rsvp.name}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta confirmação será removida e a contagem de convidados será atualizada.
+                          Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => void removeRsvp(rsvp.id)}
+                        >
+                          Excluir confirmação
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </li>
               ))}
               {rsvps.length === 0 ? (

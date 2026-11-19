@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { sendRsvpNotification } from "@/lib/rsvp-notification.functions";
 
 export const Route = createFileRoute("/confirmar")({
   head: () => ({
@@ -28,7 +29,10 @@ export const Route = createFileRoute("/confirmar")({
 
 const rsvpSchema = z.object({
   guest_name: z.string().trim().min(2, "Informe seu nome completo").max(120),
-  guests_count: z.number().int().min(1).max(10),
+  guests_count: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.number({ required_error: "Informe o número de pessoas" }).int().min(1).max(10),
+  ),
   attending: z.boolean(),
   message: z.string().trim().max(500).or(z.literal("")),
   companion_names: z.string().trim().max(500).or(z.literal("")),
@@ -39,7 +43,7 @@ const rsvpSchema = z.object({
 function RsvpPage() {
   const [form, setForm] = useState({
     guest_name: "",
-    guests_count: 1,
+    guests_count: "" as number | "",
     attending: true,
     message: "",
     companion_names: "",
@@ -51,7 +55,9 @@ function RsvpPage() {
   const mutation = useMutation({
     mutationFn: async () => {
       const parsed = rsvpSchema.parse(form);
+      const rsvpId = crypto.randomUUID();
       const { error } = await supabase.from("rsvps").insert({
+        id: rsvpId,
         name: parsed.guest_name,
         guests: parsed.guests_count,
         attending: parsed.attending,
@@ -61,10 +67,21 @@ function RsvpPage() {
         child_ages: parsed.attending && parsed.has_children ? parsed.child_ages || null : null,
       });
       if (error) throw error;
+      return sendRsvpNotification({
+        data: {
+          id: rsvpId,
+          name: parsed.guest_name,
+          attending: parsed.attending,
+          guests: parsed.guests_count,
+        },
+      }).catch(() => ({ sent: false }));
     },
-    onSuccess: () => {
+    onSuccess: (notification) => {
       setDone(true);
       toast.success("Presença registrada. Obrigado!");
+      if (notification && !notification.sent) {
+        toast.info("A confirmação foi salva, mas o aviso por e-mail não pôde ser enviado.");
+      }
     },
     onError: (error: unknown) => {
       const message =
@@ -151,12 +168,15 @@ function RsvpPage() {
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    guests_count: Math.min(10, Math.max(1, Number(event.target.value) || 1)),
+                    guests_count:
+                      event.target.value === ""
+                        ? ""
+                        : Math.min(10, Math.max(1, Number(event.target.value))),
                   })
                 }
               />
             </div>
-            {form.guests_count > 1 ? (
+            {typeof form.guests_count === "number" && form.guests_count > 1 ? (
               <div className="space-y-2">
                 <Label htmlFor="companion_names">Nome dos acompanhantes</Label>
                 <Textarea

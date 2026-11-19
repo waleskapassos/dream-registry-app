@@ -25,6 +25,22 @@ npm i
 npm run dev
 ```
 
+## Avisos de confirmação por e-mail
+
+Depois que uma presença for salva, o site pode enviar um aviso para os e-mails
+configurados. O envio usa a API do Resend. Configure estes secrets no ambiente
+de produção e publique novamente:
+
+```env
+RESEND_API_KEY=re_...
+RSVP_NOTIFICATION_FROM=Casamento <avisos@seudominio.com>
+RSVP_NOTIFICATION_EMAILS=email1@exemplo.com,email2@exemplo.com
+```
+
+No Resend, crie uma chave de API e verifique o domínio usado em
+`RSVP_NOTIFICATION_FROM`. Sem esses secrets, as confirmações continuam sendo
+salvas normalmente, mas nenhum aviso é enviado.
+
 ## Pagamentos em produção
 
 Crédito e débito usam o Checkout Pro do Mercado Pago. No ambiente publicado do
